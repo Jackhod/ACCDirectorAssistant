@@ -15,29 +15,13 @@ namespace ACCAssistedDirector.Core.Assistant {
         IMLPredictor nbcClassifier;
 
         public bool Init() {
-            //bprRecommender = new BPRRecommender(Path.GetFullPath("Models/CamModel.dat"));
             R = new Random();
             nbcClassifier = new NBCClassifier();
             var modelLoaded = nbcClassifier.LoadModel("Models/CamModel.dat");
             return modelLoaded;
         }
 
-        public TipModel<CameraModel> GetCam(ICameraService camService, CarUpdateModel car) {
-            var featureVector = new CamFeatureVector() {
-                CarsAround = car.CarsAroundMe30m,
-                GapRear = Math.Min(car.GapRearSeconds, 5f),
-                GapFront = Math.Min(car.GapFrontSeconds,5f)
-            };
-
-            //var camType = nbcClassifier.Classify(featureVector);
-            var camType = (CamTypeEnum)nbcClassifier.Predict(featureVector.ToArray());
-            var cameras = camService.CameraSets.SelectMany(x => x.Value);
-            var candidates = cameras.Where(x => x.CamType == camType).ToArray();
-            
-            if (candidates.Any()) return new TipModel<CameraModel>() { Tip = candidates[R.Next(candidates.Length)], Score = 1f };
-            else return null;
-        }
-
+        //Returns n predicted cams
         public List<TipModel<CameraModel>> GetPreferredCams(ICameraService camService, CarUpdateModel car, int howMany) {
             List<TipModel<CameraModel>> camScores = new List<TipModel<CameraModel>>();
 

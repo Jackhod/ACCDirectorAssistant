@@ -68,9 +68,6 @@ namespace ACCAssistedDirector.Core.Assistant {
 
             _carPersonalSelectorReady = CarPersonalSelector.Init();
             _camPersonalSelectorReady = CamPersonalSelector.Init();
-
-            //TESTING
-            DirectorAssistantMLManager.OnCompletedTraining += WriteStats;
         }
 
         private void OnLastCarUpdated() {
@@ -84,82 +81,13 @@ namespace ACCAssistedDirector.Core.Assistant {
 
             }
         }
-
-        
-        private void OnSetFocus(bool autoDirectorChangedFocus) {
-            if(_isRace && !autoDirectorChangedFocus) DirectorAssistantMLManager.CarFocusUpdateAsync();
-
-            
-        }
        
-        
+        private void OnSetFocus(bool autoDirectorChangedFocus) {
+            if(_isRace && !autoDirectorChangedFocus) DirectorAssistantMLManager.CarFocusUpdateAsync();            
+        }
+              
         private void OnSetCamera(CameraModel cam, bool autoDirectorChangedCamera) {
-            if (_isRace && !autoDirectorChangedCamera) DirectorAssistantMLManager.CamDataUpdateAsync();
-
-            
-        }
-
-        //TESTING
-        private bool writingStats = false;
-        private int _totalFocusChanges = 0;
-        private List<int> _suggestedFocusChanges = new List<int>() { 0, 0, 0, 0, 0 };
-        private void FocusSuggestionsStats() {
-            _totalFocusChanges += 1;
-            var focusedCarIndex = carEntryListService.GetFocusedCar().CarInfo.CarIndex;
-            for (int i = 0; i < 5; i++) {
-                var t = DirectorTips[i];
-                if (t.CarTip.Tip.CarInfo.CarIndex == focusedCarIndex) {
-                    for (int j = i; j < 5; j++) {
-                        _suggestedFocusChanges[j] += 1;
-                    }
-                }
-            }
-            System.Diagnostics.Trace.WriteLine("focus: " + _suggestedFocusChanges[0] + " " + 
-                                                           _suggestedFocusChanges[1] + " " +
-                                                           _suggestedFocusChanges[2] + " " +
-                                                           _suggestedFocusChanges[3] + " " +
-                                                           _suggestedFocusChanges[4] + " " + _totalFocusChanges);
-
-        }
-
-        //TESTING
-        private int _totalCamChanges = 0;
-        private List<int> _suggestedCamChanges = new List<int>() { 0, 0 };
-        private void CamSuggestionsStats(CameraModel cam) {
-            _totalCamChanges += 1;
-            var focusedCarIndex = carEntryListService.GetFocusedCar().CarInfo.CarIndex;
-            
-            foreach (var t in DirectorTips) {
-                var tippedCar = t.CarTip.Tip;
-                if (tippedCar.CarInfo.CarIndex == focusedCarIndex) { //find the tipped car
-                    for(int i = 0; i < t.CamTips.Count; i++) { //check the tipped cams
-                        var camTip = t.CamTips[i].Tip;
-                        if(camTip.CamType == cam.CamType) {
-                            for (int j = i; j < 2; j++) _suggestedCamChanges[j] += 1;
-                        }
-                    }
-
-                    System.Diagnostics.Trace.WriteLine("cam: " + _suggestedCamChanges[0] + " " +
-                                                                 _suggestedCamChanges[1] + " " + _totalCamChanges);
-                }
-            }
-        }
-
-        //TESTING
-        public void WriteStats() {
-            writingStats = true;           
-            List<int> focusStats = new List<int>();
-            focusStats.AddRange(_suggestedFocusChanges);
-            focusStats.Add(_totalFocusChanges);
-            string sFocusStats = string.Join(",", focusStats);
-            File.AppendAllText("C:/Users/gvann/Desktop/SuggestionStats/FocusStats.txt", sFocusStats + "\n");
-
-            List<int> cameraStats = new List<int>();
-            cameraStats.AddRange(_suggestedCamChanges);
-            cameraStats.Add(_totalCamChanges);
-            string sCameraStats = string.Join(",", cameraStats);
-            File.AppendAllText("C:/Users/gvann/Desktop/SuggestionStats/CameraStats.txt", sCameraStats + "\n");
-
+            if (_isRace && !autoDirectorChangedCamera) DirectorAssistantMLManager.CamDataUpdateAsync();           
         }
 
         private void GenerateSuggestions() {
@@ -174,9 +102,6 @@ namespace ACCAssistedDirector.Core.Assistant {
                 DirectorTips.Add(directorTip);
             }
 
-            //TESTING
-            SelectTestCarAndCam();
-
             if (IsAutoPilotActive) SelectBestCarAndCam(DirectorTips);
 
             OnNewTipsGenerated?.Invoke(DirectorTips);
@@ -186,7 +111,6 @@ namespace ACCAssistedDirector.Core.Assistant {
             List<TipModel<CarUpdateModel>> suggestedCars = new List<TipModel<CarUpdateModel>>();
 
             var cars = carEntryListService.CarEntryList;
-            //var trackMeters = trackDataService.TrackDataModel.TrackMeters;
             var carUpdatesOrdered = cars.OrderBy(c => c.TrackPosition).ToList();
             var currentFocusSeconds = (float)(DateTime.Now - carEntryListService.LastFocusChange).TotalSeconds;
 
@@ -194,21 +118,15 @@ namespace ACCAssistedDirector.Core.Assistant {
                 //we get the suggestions from the machine learning car selector
                 suggestedCars.AddRange(CarPersonalSelector.GetPreferredCars(carUpdatesOrdered, currentFocusSeconds, 5));
 
-                //adding the focused car to the list the get its cam suggestion
-                AddFocusedCarTip(suggestedCars);
-
                 //We get the suggestion from the algorithmic car selector and add it if it is not already in the suggestions list
-                //AddAlgorithmicCarTip(suggestedCars, 1);
+                AddAlgorithmicCarTip(suggestedCars, 1);
+
+                //adding the focused car to the list the get its cam suggestion
+                AddFocusedCarTip(suggestedCars);                
             } else {
-                //suggestedCars.AddRange(CarSelector.GetPreferredCar(carUpdatesOrdered, /*trackMeters,*/ currentFocusSeconds, 5));
                 AddAlgorithmicCarTip(suggestedCars, 5);
                 AddFocusedCarTip(suggestedCars);
             }
-
-            //Debug.WriteLine("");
-            //foreach(var c in suggestedCars) {
-            //    Debug.WriteLine(c.Tip.CarInfo.CarIndex + " " + c.Score);
-            //}
 
             return suggestedCars;
         }
@@ -239,8 +157,7 @@ namespace ACCAssistedDirector.Core.Assistant {
 
             if (_camPersonalSelectorReady) {
                 //Gets the suggestion from the machine learning camera selector
-                //cams.Add(CamPersonalSelector.GetCam(cameraService, car));
-                cams.AddRange(CamPersonalSelector.GetPreferredCams(cameraService, car, 2));
+                cams.AddRange(CamPersonalSelector.GetPreferredCams(cameraService, car, 1));
             } else {
                 //Gets the suggestion from the algorithmic camera selector
                 cams.Add(CamSelector.GetPreferredCamera(
@@ -309,51 +226,7 @@ namespace ACCAssistedDirector.Core.Assistant {
                 clientService.MessageHandler.SetCamera(bestCam.CameraSetName, bestCam.CameraName, true);
             }
         }
-        
-        //TEST 
-        private void SelectTestCarAndCam() {
-            var currentFocusSeconds = (float)(DateTime.Now - carEntryListService.LastFocusChange).TotalSeconds;
-            var currentCamSeconds = (float)(DateTime.Now - cameraService.LastCameraSetChange).TotalSeconds;
-            var cars = carEntryListService.CarEntryList;
-            var trackMeters = trackDataService.TrackDataModel.TrackMeters;
-            var carUpdatesOrdered = cars.OrderBy(c => c.TrackPosition).ToList();
-
-            CarUpdateModel bestCar = CarSelector.GetTestPreferredCar(carUpdatesOrdered, /*trackMeters,*/ currentFocusSeconds, 1).Single().Tip;
-            CameraModel bestCam = CamSelector.GetPreferredCamera(
-                    bestCar,
-                    cameraService.CurrentCam,
-                    trackDataService.TrackDataModel.TrackMeters,
-                    cameraService.LastCameraChange,
-                    cameraService.LastCameraSetChange,
-                    cameraService.CamTypeLastActive,
-                    cameraService.CameraSets.SelectMany(x => x.Value),
-                    cameraService.TVCameraSets.SelectMany(x => x.Value),
-                    cameraService.TVCamLearningProgress
-                    ).Tip;
-            
-
-            var isFocusChange = bestCar != null && !bestCar.HasFocus;
-            var isCameraChange = bestCam != null && cameraService.CurrentCam.CamType != bestCam.CamType;
-
-            if (isFocusChange && isCameraChange) {
-                Debug.WriteLine("changed both");
-                clientService.MessageHandler.SetFocusAndCamera(bestCar.CarInfo.CarIndex, bestCam.CameraSetName, bestCam.CameraName, false);
-                //TESTING
-                if (DirectorTips != null && !writingStats) FocusSuggestionsStats();
-                if (DirectorTips != null && !writingStats) CamSuggestionsStats(bestCam);
-            } else if (isFocusChange) {
-                Debug.WriteLine("changed focus");
-                clientService.MessageHandler.SetFocus(bestCar.CarInfo.CarIndex, true, false);
-                //TESTING
-                if (DirectorTips != null && !writingStats) FocusSuggestionsStats();
-            } else if (isCameraChange) {
-                Debug.WriteLine("changed cam");
-                clientService.MessageHandler.SetCamera(bestCam.CameraSetName, bestCam.CameraName, false);
-                //TESTING
-                if (DirectorTips != null && !writingStats) CamSuggestionsStats(bestCam);
-            }
-        }
-
+     
         //Check if the current session is a race
         protected override void OnRealtimeUpdate(string sender, RealtimeUpdate realtimeUpdate) {
             _isRace = realtimeUpdate.SessionType == Domain.Enums.RaceSessionType.Race;
