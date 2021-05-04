@@ -1,0 +1,47 @@
+﻿<views:MvxWpfView
+    xmlns:views="clr-namespace:MvvmCross.Platforms.Wpf.Views;assembly=MvvmCross.Platforms.Wpf"
+    xmlns:mvx="clr-namespace:MvvmCross.Platforms.Wpf.Binding;assembly=MvvmCross.Platforms.Wpf"
+    x:Class="ACCAssistedDirector.Wpf.Views.OptionsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:ACCAssistedDirector.Wpf.Views"
+             xmlns:fa5="http://schemas.fontawesome.com/icons/"
+             mc:Ignorable="d" 
+             Height="400" Width="550"
+             Background="#0E0E0E">
+    <Grid>
+        
+        <Button x:Name="Options"
+                    Grid.Column="8"
+                    Height="30"
+                    Width="30"
+                    Margin="0,10,10,0"
+                    VerticalAlignment="Top"
+                    HorizontalAlignment="Right"
+                    Command="{Binding CloseCommand}">
+            <fa5:ImageAwesome Icon="Solid_Times" Width="20" Height="20"/>
+        </Button>
+        <Border Padding="0,70,0,70" Width="450">
+            <UniformGrid Columns="1">
+                <UniformGrid Rows="1">
+                    <TextBlock Style="{StaticResource SubTitleText}" Text="Director assistant" />
+                    <CheckBox Style="{DynamicResource CheckBoxStyle1}" HorizontalAlignment="Right" VerticalAlignment="Center" IsChecked="{Binding InstantFocus, Mode=TwoWay}"/>
+                </UniformGrid>
+                <UniformGrid Rows="1">
+                    <TextBlock Style="{StaticResource SubTitleText}" Text="Pilot suggestions" />
+                    <CheckBox Style="{DynamicResource CheckBoxStyle1}" HorizontalAlignment="Right" VerticalAlignment="Center" IsChecked="{Binding InstantFocus, Mode=TwoWay}"/>
+                </UniformGrid>
+                <UniformGrid Rows="1">
+                    <TextBlock Style="{StaticResource SubTitleText}" Text="Camera suggestions"/>
+                    <CheckBox Style="{DynamicResource CheckBoxStyle1}" HorizontalAlignment="Right" VerticalAlignment="Center" IsChecked="{Binding InstantFocus, Mode=TwoWay}"/>
+                </UniformGrid>
+                <Button Content="disconnect"
+                        Height="50"
+                        Command="{Binding DisconnectCommand}">
+                </Button>
+        </UniformGrid>
+        </Border>
+    </Grid>
+</views:MvxWpfView>
