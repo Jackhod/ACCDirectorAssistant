@@ -1,4 +1,5 @@
-﻿using Domain.Models;
+﻿using Application.Services.Interfaces;
+using Domain.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -10,7 +11,7 @@ namespace ACCAssistedDirector.Core.Services {
     public delegate void LastCarUpdatedDelegate();
     public delegate void FocusedCarUpdatedDelegate(bool isAutoDirector);
 
-    public interface ICarEntryListService {
+    public interface ICarEntryListService : Service {
         public List<CarUpdateModel> CarEntryList { get; set; }
         public DateTime LastFocusChange { get; }
         public CarUpdateModel GetFocusedCar();

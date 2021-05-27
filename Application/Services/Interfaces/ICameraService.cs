@@ -1,4 +1,5 @@
-﻿using Domain.Models;
+﻿using Application.Services.Interfaces;
+using Domain.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -9,7 +10,7 @@ namespace ACCAssistedDirector.Core.Services {
     public delegate void ActiveCamtypeUpdatedDelegate(CameraModel selectedCam, bool isAutoDirector);
     public delegate void ActiveCamUpdatedDelegate(CameraModel selectedCam, bool isAutoDirector);
 
-    public interface ICameraService {
+    public interface ICameraService : Service {
         public Dictionary<string, List<TVCameraModel>> TVCameraSets { get; }
         public Dictionary<string, List<CameraModel>> CameraSets { get; }
         public Dictionary<CamTypeEnum, DateTime> CamTypeLastActive { get; }

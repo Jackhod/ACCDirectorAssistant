@@ -19,7 +19,7 @@ namespace ACCAssistedDirector.Core.Assistant {
     public delegate void StartedTrainingDelegate();
     public delegate void CompletedTrainingDelegate();
 
-    public class DirectorAssistantMLManager : UpdateReceiver {
+    public class DirectorAssistantMLManager : GameUpdatesReceiver {
 
         public CarPersonalSelector CarPersonalSelector { get; private set; }
         public CamPersonalSelector CamPersonalSelector { get; private set; }
@@ -61,6 +61,10 @@ namespace ACCAssistedDirector.Core.Assistant {
             _carFeaturesCSVHelper = carFeaturesCSVHelper;
             _camFeaturesCSVHelper = camFeaturesCSVHelper;
             _recordData = recordData;
+        }
+
+        public void Close() {
+            UnsubscribeFromGameUpdates();
         }
 
         protected override void OnRealtimeUpdate(string sender, RealtimeUpdate realtimeUpdate) {

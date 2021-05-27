@@ -134,7 +134,7 @@ namespace Application.ML.NaiveBayesClassifier {
                     }
                 }
 
-                writer.Close();
+                writer.Dispose();
             } catch (Exception ex) {
                 System.Diagnostics.Trace.WriteLine(ex.StackTrace);
             }
@@ -168,7 +168,7 @@ namespace Application.ML.NaiveBayesClassifier {
                 _trainingCycles += 1;
                 writer.Write(_trainingCycles);
 
-                writer.Close();
+                writer.Dispose();
             }catch(Exception ex) {
                 System.Diagnostics.Trace.Write(ex.StackTrace);
             }
@@ -217,7 +217,7 @@ namespace Application.ML.NaiveBayesClassifier {
 
                     _trainingCycles = reader.ReadInt32();
 
-                    reader.Close();
+                    reader.Dispose();
                     _modelLoaded = true;
                     return true;
                 }

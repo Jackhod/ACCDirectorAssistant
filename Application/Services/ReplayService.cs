@@ -8,7 +8,7 @@ using System.Diagnostics;
 using System.Linq;
 
 namespace ACCAssistedDirector.Core.Services {
-    public class ReplayService : UpdateReceiver, IReplayService{
+    public class ReplayService : GameUpdatesReceiver, IReplayService{
 
         public List<BroadcastingEventModel> Events { get; set; }
         public int MaxNumEvents { get; set; } = 5;
@@ -26,6 +26,13 @@ namespace ACCAssistedDirector.Core.Services {
             Events = new List<BroadcastingEventModel>();         
             this.carEntryListService = carEntryListService;
             start = DateTime.Now;
+        }
+
+        public void CancelService() {
+            Events.Clear();
+            Events = null;
+
+            UnsubscribeFromGameUpdates();
         }
 
         protected override void OnRealtimeUpdate(string sender, RealtimeUpdate realtimeUpdate) {

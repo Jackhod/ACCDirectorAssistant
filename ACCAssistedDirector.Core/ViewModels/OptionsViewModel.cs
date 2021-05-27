@@ -31,7 +31,10 @@ namespace ACCAssistedDirector.Core.ViewModels {
         }
 
         private async void Disconnect() {
-            Mvx.IoCProvider.Resolve<IClientService>().Shutdown();
+            var client = Mvx.IoCProvider.Resolve<IClientService>();
+            client.Shutdown();
+            client.Dispose();
+            await _navigationService.Close(this);
             await _navigationService.Navigate<ClientConnectionViewModel>();
         }
     }

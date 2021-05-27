@@ -20,6 +20,10 @@ namespace Infrastructure.Networking {
         private UdpClient _client;
         private Task _listenerTask;
 
+        public ACCUdpRemoteClient() {
+            MessageHandler = new BroadcastingNetworkProtocol();
+        }
+
         public void Init(string ip, int port, string displayName, string connectionPassword, string commandPassword, int msRealtimeUpdateInterval) {
             IpPort = $"{ip}:{port}";
             Ip = ip;
@@ -28,7 +32,7 @@ namespace Infrastructure.Networking {
             ConnectionPassword = connectionPassword;
             CommandPassword = commandPassword;
             MsRealtimeUpdateInterval = msRealtimeUpdateInterval;
-            MessageHandler = new BroadcastingNetworkProtocol(IpPort, Send);
+            MessageHandler.Init(IpPort, Send);
         }
 
         public void Connect() {
@@ -71,10 +75,7 @@ namespace Infrastructure.Networking {
                     var udpPacket = await _client.ReceiveAsync();
                     using (var ms = new System.IO.MemoryStream(udpPacket.Buffer))
                     using (var reader = new System.IO.BinaryReader(ms)) {
-                        //var w = System.Diagnostics.Stopwatch.StartNew();
                         msgHandler.ProcessMessage(reader);
-                        //w.Stop();
-                        //System.Diagnostics.Debug.WriteLine("total time: " + w.ElapsedMilliseconds);
                     }
                 } catch (ObjectDisposedException) {
                     // Shutdown happened
@@ -104,9 +105,6 @@ namespace Infrastructure.Networking {
                     }
                 }
 
-                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
-                // TODO: set large fields to null.
-
                 disposedValue = true;
             }
         }
@@ -119,7 +117,6 @@ namespace Infrastructure.Networking {
 
         // This code added to correctly implement the disposable pattern.
         public void Dispose() {
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
             Dispose(true);
             // TODO: uncomment the following line if the finalizer is overridden above.
             // GC.SuppressFinalize(this);

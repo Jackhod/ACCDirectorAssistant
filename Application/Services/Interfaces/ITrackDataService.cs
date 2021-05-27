@@ -1,7 +1,8 @@
-﻿using Domain.Models;
+﻿using Application.Services.Interfaces;
+using Domain.Models;
 
 namespace ACCAssistedDirector.Core.Services {
-    public interface ITrackDataService {
+    public interface ITrackDataService : Service{
         public TrackDataModel TrackDataModel { get; set; }
     }
 }

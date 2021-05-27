@@ -14,7 +14,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ACCAssistedDirector.Core.Assistant {
-    public class DirectorAssistant : UpdateReceiver, IDirectorAssistant {
+    public class DirectorAssistant : GameUpdatesReceiver, IDirectorAssistant {
 
         public List<DirectorTipModel> DirectorTips { get; set; }
         public DirectorAssistantMLManager DirectorAssistantMLManager { get; set; }
@@ -25,21 +25,18 @@ namespace ACCAssistedDirector.Core.Assistant {
         public bool IsAutoPilotActive { get; set; }
 
         //Dependencies
-        private ICarEntryListService carEntryListService;
-        private ICameraService cameraService;
-        private ITrackDataService trackDataService;
-        private IClientService clientService;
-
-        private int carSelectionId = 0;
-        private int camSelectionId = 0;
+        private ICarEntryListService _carEntryListService;
+        private ICameraService _cameraService;
+        private ITrackDataService _trackDataService;
+        private IClientService _clientService;
+        private ICSVHelperService<CarFeatures> _carFeaturesCSVHelper;
+        private ICSVHelperService<CamFeatureVector> _camFeaturesCSVHelper;
 
         private bool _carPersonalSelectorReady = false;
         private bool _camPersonalSelectorReady = false;
         private bool _isRace = true;
 
         public event NewTipsGeneratedDelegate OnNewTipsGenerated;
-
-        private ICSVHelperService<List<int>> _statsCSVHelper;
 
         public DirectorAssistant(
             ICarEntryListService carEntryListService, 
@@ -57,17 +54,43 @@ namespace ACCAssistedDirector.Core.Assistant {
             CamPersonalSelector = new CamPersonalSelector();
             DirectorAssistantMLManager = new DirectorAssistantMLManager(CarPersonalSelector, CamPersonalSelector, carEntryListService, cameraService, camFeaturesCSVHelper, carFeaturesCSVHelper, clientService, true);
 
-            this.carEntryListService = carEntryListService;
-            this.cameraService = cameraService;
-            this.trackDataService = trackDataService;
-            this.clientService = clientService;
+            _carEntryListService = carEntryListService;
+            _cameraService = cameraService;
+            _trackDataService = trackDataService;
+            _clientService = clientService;
+            _carFeaturesCSVHelper = carFeaturesCSVHelper;
+            _camFeaturesCSVHelper = camFeaturesCSVHelper;
 
-            carEntryListService.OnLastCarUpdated += OnLastCarUpdated;
-            carEntryListService.OnFocusedCarUpdated += OnSetFocus;
-            cameraService.OnActiveCamTypeUpdated += OnSetCamera;
+            _carEntryListService.OnLastCarUpdated += OnLastCarUpdated;
+            _carEntryListService.OnFocusedCarUpdated += OnSetFocus;
+            _cameraService.OnActiveCamTypeUpdated += OnSetCamera;
 
             _carPersonalSelectorReady = CarPersonalSelector.Init();
             _camPersonalSelectorReady = CamPersonalSelector.Init();
+        }
+
+        public void CancelService() {
+            if (DirectorTips != null) {
+                DirectorTips.Clear();
+                DirectorTips = null;
+            }
+
+            _carEntryListService.OnLastCarUpdated -= OnLastCarUpdated;
+            _carEntryListService.OnFocusedCarUpdated -= OnSetFocus;
+            _cameraService.OnActiveCamTypeUpdated -= OnSetCamera;
+
+            UnsubscribeFromGameUpdates();
+
+            DirectorAssistantMLManager.Close();
+        }
+
+        protected override void OnRealtimeUpdate(string sender, RealtimeUpdate realtimeUpdate) {
+
+            _isRace = realtimeUpdate.SessionType == Domain.Enums.RaceSessionType.Race;
+
+            if (!_isRace && DirectorAssistantMLManager.IsTrainingEnabled()) DirectorAssistantMLManager.DisableTraining();
+
+            if (_isRace && !DirectorAssistantMLManager.IsTrainingEnabled()) DirectorAssistantMLManager.EnableTraining();             
         }
 
         private void OnLastCarUpdated() {
@@ -75,10 +98,9 @@ namespace ACCAssistedDirector.Core.Assistant {
             if (_isRace) {
                 DirectorAssistantMLManager.CarDataUpdate();
 
-                var focusedCar = carEntryListService.GetFocusedCar();
+                var focusedCar = _carEntryListService.GetFocusedCar();
 
                 GenerateSuggestions();
-
             }
         }
        
@@ -110,9 +132,9 @@ namespace ACCAssistedDirector.Core.Assistant {
         private List<TipModel<CarUpdateModel>> GenerateCarSuggestions() {
             List<TipModel<CarUpdateModel>> suggestedCars = new List<TipModel<CarUpdateModel>>();
 
-            var cars = carEntryListService.CarEntryList;
+            var cars = _carEntryListService.CarEntryList;
             var carUpdatesOrdered = cars.OrderBy(c => c.TrackPosition).ToList();
-            var currentFocusSeconds = (float)(DateTime.Now - carEntryListService.LastFocusChange).TotalSeconds;
+            var currentFocusSeconds = (float)(DateTime.Now - _carEntryListService.LastFocusChange).TotalSeconds;
 
             if (_carPersonalSelectorReady) {
                 //we get the suggestions from the machine learning car selector
@@ -132,7 +154,7 @@ namespace ACCAssistedDirector.Core.Assistant {
         }
 
         private void AddFocusedCarTip(List<TipModel<CarUpdateModel>> suggestedCars) {
-            var focusedCarTip = new TipModel<CarUpdateModel>() { Tip = carEntryListService.GetFocusedCar(), Score = .0f };
+            var focusedCarTip = new TipModel<CarUpdateModel>() { Tip = _carEntryListService.GetFocusedCar(), Score = .0f };
             foreach (var carTip in suggestedCars) {
                 if (focusedCarTip.Tip == carTip.Tip) return;
             }
@@ -140,8 +162,8 @@ namespace ACCAssistedDirector.Core.Assistant {
         }
 
         private void AddAlgorithmicCarTip(List<TipModel<CarUpdateModel>> suggestedCars, int howMany) {
-            var carUpdatesOrdered = carEntryListService.CarEntryList.OrderBy(c => c.TrackPosition).ToList();
-            var currentFocusSeconds = (float)(DateTime.Now - carEntryListService.LastFocusChange).TotalSeconds;
+            var carUpdatesOrdered = _carEntryListService.CarEntryList.OrderBy(c => c.TrackPosition).ToList();
+            var currentFocusSeconds = (float)(DateTime.Now - _carEntryListService.LastFocusChange).TotalSeconds;
             var algCarTips = CarSelector.GetPreferredCar(carUpdatesOrdered, currentFocusSeconds, howMany);
             
             foreach (var algTip in algCarTips) {
@@ -157,19 +179,19 @@ namespace ACCAssistedDirector.Core.Assistant {
 
             if (_camPersonalSelectorReady) {
                 //Gets the suggestion from the machine learning camera selector
-                cams.AddRange(CamPersonalSelector.GetPreferredCams(cameraService, car, 1));
+                cams.AddRange(CamPersonalSelector.GetPreferredCams(_cameraService, car, 1));
             } else {
                 //Gets the suggestion from the algorithmic camera selector
                 cams.Add(CamSelector.GetPreferredCamera(
                     car,
-                    cameraService.CurrentCam,
-                    trackDataService.TrackDataModel.TrackMeters,
-                    cameraService.LastCameraChange,
-                    cameraService.LastCameraSetChange,
-                    cameraService.CamTypeLastActive,
-                    cameraService.CameraSets.SelectMany(x => x.Value),
-                    cameraService.TVCameraSets.SelectMany(x => x.Value),
-                    cameraService.TVCamLearningProgress
+                    _cameraService.CurrentCam,
+                    _trackDataService.TrackDataModel.TrackMeters,
+                    _cameraService.LastCameraChange,
+                    _cameraService.LastCameraSetChange,
+                    _cameraService.CamTypeLastActive,
+                    _cameraService.CameraSets.SelectMany(x => x.Value),
+                    _cameraService.TVCameraSets.SelectMany(x => x.Value),
+                    _cameraService.TVCamLearningProgress
                     ));
             }
             return cams;
@@ -177,14 +199,14 @@ namespace ACCAssistedDirector.Core.Assistant {
 
         private void SelectBestCarAndCam(List<DirectorTipModel> directorTips) {
 
-            var currentFocusSeconds = (float)(DateTime.Now - carEntryListService.LastFocusChange).TotalSeconds;
-            var currentCamSeconds = (float)(DateTime.Now - cameraService.LastCameraSetChange).TotalSeconds; 
+            var currentFocusSeconds = (float)(DateTime.Now - _carEntryListService.LastFocusChange).TotalSeconds;
+            var currentCamSeconds = (float)(DateTime.Now - _cameraService.LastCameraSetChange).TotalSeconds; 
 
-            CarUpdateModel bestCar = carEntryListService.GetFocusedCar();
-            CameraModel bestCam = cameraService.CurrentCam;
+            CarUpdateModel bestCar = _carEntryListService.GetFocusedCar();
+            CameraModel bestCam = _cameraService.CurrentCam;
             float bestCarScore;           
             if (_carPersonalSelectorReady) {
-                bestCarScore = CarPersonalSelector.EvaluateCar(bestCar, carEntryListService.CarEntryList.Count, currentFocusSeconds);
+                bestCarScore = CarPersonalSelector.EvaluateCar(bestCar, _carEntryListService.CarEntryList.Count, currentFocusSeconds);
 
             } else {
                 bestCarScore = 0f;
@@ -216,24 +238,15 @@ namespace ACCAssistedDirector.Core.Assistant {
             }
 
             var isFocusChange = bestCar != null && !bestCar.HasFocus;
-            var isCameraChange = bestCam != null && cameraService.CurrentCam.CamType != bestCam.CamType && currentCamSeconds > 10;
+            var isCameraChange = bestCam != null && _cameraService.CurrentCam.CamType != bestCam.CamType && currentCamSeconds > 10;
 
             if (isFocusChange && isCameraChange) {
-                clientService.MessageHandler.SetFocusAndCamera(bestCar.CarInfo.CarIndex, bestCam.CameraSetName, bestCam.CameraName, true);
+                _clientService.MessageHandler.SetFocusAndCamera(bestCar.CarInfo.CarIndex, bestCam.CameraSetName, bestCam.CameraName, true);
             } else if (isFocusChange) {
-                clientService.MessageHandler.SetFocus(bestCar.CarInfo.CarIndex, true, true);
+                _clientService.MessageHandler.SetFocus(bestCar.CarInfo.CarIndex, true, true);
             } else if (isCameraChange) {
-                clientService.MessageHandler.SetCamera(bestCam.CameraSetName, bestCam.CameraName, true);
+                _clientService.MessageHandler.SetCamera(bestCam.CameraSetName, bestCam.CameraName, true);
             }
-        }
-     
-        //Check if the current session is a race
-        protected override void OnRealtimeUpdate(string sender, RealtimeUpdate realtimeUpdate) {
-            _isRace = realtimeUpdate.SessionType == Domain.Enums.RaceSessionType.Race;
-
-            if (!_isRace && DirectorAssistantMLManager.IsTrainingEnabled()) DirectorAssistantMLManager.DisableTraining();
-
-            if (_isRace && !DirectorAssistantMLManager.IsTrainingEnabled()) DirectorAssistantMLManager.EnableTraining();
         }
     }
 }

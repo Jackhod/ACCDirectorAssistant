@@ -8,12 +8,13 @@ using System.Linq;
 using System.Text;
 
 namespace ACCAssistedDirector.Core.Services {
-    public class CarEntryListService : UpdateReceiver, ICarEntryListService {
+    public class CarEntryListService : GameUpdatesReceiver, ICarEntryListService {
         
         public List<CarUpdateModel> CarEntryList { get; set; }
         public DateTime LastFocusChange { get; private set; }
 
-        private ITrackDataService trackData;
+        private ITrackDataService _trackData;
+        private IClientService _clientService;
         private int updateCount = 0;
         private int focusedCarIndex;
         private DateTime _lastEntrylistRequest = DateTime.Now;
@@ -26,13 +27,29 @@ namespace ACCAssistedDirector.Core.Services {
         #endregion
 
         public CarEntryListService(IClientService clientService, ITrackDataService trackDataService) : base(clientService) {
+
+            Debug.WriteLine("CAR_ENTRYLIST_SERVICE: constructor");
+
             CarEntryList = new List<CarUpdateModel>();
-            trackData = trackDataService;
-            clientService.MessageHandler.OnSetFocus += SetFocusedCar;
+            _trackData = trackDataService;
+            _clientService = clientService;
+
+            _clientService.MessageHandler.OnSetFocus += SetFocusedCar;
+        }
+
+        public void CancelService() {
+            UnsubscribeFromGameUpdates();
+            _clientService.MessageHandler.OnSetFocus -= SetFocusedCar;
+            CarEntryList.Clear();
+            CarEntryList = null;           
         }
        
         protected override void OnEntrylistReceived(string sender, IEnumerable<ushort> carIds) {
+
+            System.Diagnostics.Debug.WriteLine("entrylist received carentry");
+
             CarEntryList.Clear();
+            updateCount = 0;
             foreach(var id in carIds) {
                 var carInfo = new CarModel(id);
                 CarEntryList.Add(new CarUpdateModel(carInfo));
@@ -68,7 +85,7 @@ namespace ACCAssistedDirector.Core.Services {
                 return;
             }
                          
-            carEntry.Update(carUpdate, trackData.TrackDataModel);           
+            carEntry.Update(carUpdate, _trackData.TrackDataModel);           
             OnCarEntryUpdated?.Invoke(carEntry.CarInfo.CarIndex);
 
             updateCount++;
@@ -83,6 +100,9 @@ namespace ACCAssistedDirector.Core.Services {
         }
 
         protected override void OnRealtimeUpdate(string sender, RealtimeUpdate update) {
+
+            if (CarEntryList == null) return;
+
             foreach (var car in CarEntryList) { 
                 if (car.CarInfo.CarIndex == update.FocusedCarIndex) {
                     if (!car.HasFocus) {
@@ -120,7 +140,7 @@ namespace ACCAssistedDirector.Core.Services {
 
         private void UpdateGaps() {
             try {
-                if (trackData.TrackDataModel != null && trackData.TrackDataModel.TrackMeters > 0) {                   
+                if (_trackData.TrackDataModel != null && _trackData.TrackDataModel.TrackMeters > 0) {                   
                     var sortedCars = CarEntryList.OrderBy(car => car.TrackPosition).ToList();
 
                     if (sortedCars.Count() > 1) {
@@ -128,7 +148,7 @@ namespace ACCAssistedDirector.Core.Services {
                             var carAhead = sortedCars[i - 1];
                             var carBehind = sortedCars[i];
 
-                            var distance = CalcMetersDistance(carAhead, carBehind, trackData.TrackDataModel.TrackMeters);
+                            var distance = CalcMetersDistance(carAhead, carBehind, _trackData.TrackDataModel.TrackMeters);
                             carBehind.GapFrontMeters = distance;
                             carAhead.GapRearMeters = distance;
 
@@ -146,7 +166,7 @@ namespace ACCAssistedDirector.Core.Services {
                         }
 
                         // then the first and last cars
-                        var distance2 = CalcMetersDistance(sortedCars.First(), sortedCars.Last(), trackData.TrackDataModel.TrackMeters);
+                        var distance2 = CalcMetersDistance(sortedCars.First(), sortedCars.Last(), _trackData.TrackDataModel.TrackMeters);
                         sortedCars.First().GapFrontMeters = distance2;
                         sortedCars.Last().GapRearMeters = distance2;
 
@@ -154,8 +174,8 @@ namespace ACCAssistedDirector.Core.Services {
                         //foreach (var c in sortedCars) Debug.WriteLine(c.GapFrontMeters + " " + c.GapFrontSeconds + " " + c.GapRearMeters + " " + c.GapRearSeconds);
                     } else {
                         foreach (var item in sortedCars) {
-                            item.GapFrontMeters = trackData.TrackDataModel.TrackMeters;
-                            item.GapRearMeters = trackData.TrackDataModel.TrackMeters;
+                            item.GapFrontMeters = _trackData.TrackDataModel.TrackMeters;
+                            item.GapRearMeters = _trackData.TrackDataModel.TrackMeters;
                         }
                     }
                 }
@@ -166,7 +186,7 @@ namespace ACCAssistedDirector.Core.Services {
         }
 
         private void CountCarsAround() {
-            var trackMeters = trackData.TrackDataModel.TrackMeters;
+            var trackMeters = _trackData.TrackDataModel.TrackMeters;
             foreach (var car in CarEntryList) {
                 car.CarsAroundMe30m = CarEntryList.Where(c => Math.Abs(c.SplinePosition - car.SplinePosition) * trackMeters < 30 && c != car).Count();
                 car.CarsAroundMe10m = CarEntryList.Where(c => Math.Abs(c.SplinePosition - car.SplinePosition) * trackMeters < 10 && c != car).Count();

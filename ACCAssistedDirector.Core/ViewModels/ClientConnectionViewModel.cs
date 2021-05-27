@@ -12,6 +12,7 @@ using MvvmCross;
 using MvvmCross.Commands;
 using MvvmCross.Logging;
 using MvvmCross.Navigation;
+using MvvmCross.Navigation.EventArguments;
 using MvvmCross.ViewModels;
 
 namespace ACCAssistedDirector.Core.ViewModels {
@@ -88,6 +89,22 @@ namespace ACCAssistedDirector.Core.ViewModels {
 
         private readonly IMvxNavigationService _navigationService;
 
+        public ClientConnectionViewModel(IMvxNavigationService navigationService, IClientService client) {
+
+            ConnectCommand = new MvxCommand(Connect);
+            IPAddr = "192.168.1.16";
+            Port = 9000;
+            DisplayName = "Your name";
+            ConnectionPW = "asd";
+            CommandPW = "";
+            UpdateIntervalMS = 1000;
+
+            _navigationService = navigationService;
+            _navigationService.AfterNavigate += Boh;
+            Client = client;
+            Client.MessageHandler.OnConnectionStateChanged += OpenMainView;
+        }
+
         public override void Prepare() {
             base.Prepare();
             _viewErrorMessage = false;
@@ -110,40 +127,32 @@ namespace ACCAssistedDirector.Core.ViewModels {
                 _viewErrorMessage = true;
                 _viewLoginCommands = false;
             }
-        }
+        }        
 
-        public ClientConnectionViewModel(IMvxNavigationService navigationService) {
-
-            ConnectCommand = new MvxCommand(Connect);
-            IPAddr = "192.168.1.16";
-            Port = 9000;
-            DisplayName = "Your name";
-            ConnectionPW = "asd";
-            CommandPW = "";
-            UpdateIntervalMS = 1000;
-
-            _navigationService = navigationService;
-        }
-
-        public void Connect(){       
-            
-            Debug.WriteLine("connecting!");
-            
-            Client  = Mvx.IoCProvider.Resolve<IClientService>();
+        public void Connect(){                   
+            Debug.WriteLine("connecting!");            
             Client.Init(_ipAddr, _port, _displayName, _connectionPW, _commandPW, _updateIntervalMS);
-            Client.Connect();
-
-            Client.MessageHandler.OnConnectionStateChanged += ConnectionStatus;
-            //ConnectionStatus(1, true, true, "");
+            Client.Connect();            
         }
 
-        private async void ConnectionStatus(int connectionId, bool connectionSuccess, bool isReadonly, string error) {
+        private async void OpenMainView(int connectionId, bool connectionSuccess, bool isReadonly, string error) {
 
             Debug.WriteLine("connected");
-            if (connectionSuccess) await _navigationService.Navigate<MainViewModel>();
-            else Debug.WriteLine("connection failed");
+            if (connectionSuccess) {
+                bool result = false;
+                result = await _navigationService.Navigate<MainViewModel, object, bool>(new object());
+                Debug.WriteLine(result);
+                Connect();
+            } else {
+                Debug.WriteLine("connection failed");
+            }
+ 
 
             //await _navigationService.Navigate<MainViewModel, ACCUdpRemoteClient>(Client);
+        }
+
+        private void Boh(object sender, IMvxNavigateEventArgs e) {
+            Debug.WriteLine("back to connection");
         }
     }
 }

@@ -34,7 +34,7 @@ namespace Domain.Models {
                 if (SplinePosEnd < 0) SplinePosEnd = model.SplinePosEnd;
                 if (EntrySpeed <= 0) EntrySpeed = model.EntrySpeed;
                 if (ExitSpeed <= 0) ExitSpeed = model.ExitSpeed;
-                Debug.WriteLine("updated " + CameraSetName + " " + CameraName);
+                //Debug.WriteLine("updated " + CameraSetName + " " + CameraName);
             }
         }
     }

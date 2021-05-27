@@ -24,7 +24,7 @@ namespace Application.ML.BayesinPersonalizedRanking {
                 numFeatures = reader.ReadInt32();
                 uFactors = new NDArray(typeof(float), numFeatures);
                 for (int i = 0; i < numFeatures; i++) uFactors[i] = reader.ReadSingle();
-                reader.Close();
+                reader.Dispose();
                 return true;
             }catch(Exception ex) {
                 System.Diagnostics.Trace.WriteLine(ex.StackTrace);

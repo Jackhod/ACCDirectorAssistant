@@ -17,9 +17,11 @@ namespace ACCAssistedDirector.Core.MessageHandling {
     public delegate void SetFocusDelegate(int carId, bool isAutoDirector);
     public delegate void SetHudPageDelegate(string requestedPage);
     public delegate void StartReplayDelegate();
+    public delegate void SendMessageDelegate(byte[] payload);
 
     public interface IMessageHandler {
-        
+
+        public void Init(string connectionIdentifier, SendMessageDelegate sendMessageDelegate);
         public void SetFocus(int carIndex, bool instantFocus, bool isAutoDirector = false);
         public void SetCamera(string cameraSet, string camera, bool isAutoDirector = false);
         public void SetFocusAndCamera(int carIndex, string cameraSet, string camera, bool isAutoDirector = false);

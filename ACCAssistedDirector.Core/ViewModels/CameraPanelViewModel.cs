@@ -40,8 +40,22 @@ namespace ACCAssistedDirector.Core.ViewModels {
         public CameraPanelViewModel (IClientService clientService, ICameraService cameraService) {
             _cameraService = cameraService;
             _clientService = clientService;
-            cameraService.OnCamsReceived += AddCams;
-            cameraService.OnActiveCamUpdated += CameraSelection;
+
+            _cameraService.OnCamsReceived += AddCams;
+            _cameraService.OnActiveCamUpdated += CameraSelection;
+        }
+
+        public void PrepareToClose() {
+            _upperCameraSetSelectors.Clear();
+            _upperCameraSetSelectors = null;
+
+            _bottomCameraSetSelectors.Clear();
+            _bottomCameraSetSelectors = null;
+
+            _cameraService.OnCamsReceived -= AddCams;
+            _cameraService.OnActiveCamUpdated -= CameraSelection;
+
+            _cameraService.CancelService();
         }
 
         private void AddCams() {

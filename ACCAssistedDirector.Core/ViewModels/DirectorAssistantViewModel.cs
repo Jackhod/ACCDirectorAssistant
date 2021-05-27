@@ -47,10 +47,23 @@ namespace ACCAssistedDirector.Core.ViewModels {
             _clientService = clientService;
             _carEntryListVM = carEntryListVM;
             _displayTrainingMessage = false;
-            directorAssistant.OnNewTipsGenerated += OnNewTipsGenerated;
-            directorAssistant.DirectorAssistantMLManager.OnStartedTraining += OnStartedTraining;
-            directorAssistant.DirectorAssistantMLManager.OnCompletedTraining += OnCompletedTraining;
             AutoDirector = directorAssistant.IsAutoPilotActive;
+
+            _directorAssistant.OnNewTipsGenerated += OnNewTipsGenerated;
+            _directorAssistant.DirectorAssistantMLManager.OnStartedTraining += OnStartedTraining;
+            _directorAssistant.DirectorAssistantMLManager.OnCompletedTraining += OnCompletedTraining;
+            
+        }
+
+        public void PrepareToClose() {
+            _directorTips.Clear();
+            _directorTips = null;
+
+            _directorAssistant.OnNewTipsGenerated -= OnNewTipsGenerated;
+            _directorAssistant.DirectorAssistantMLManager.OnStartedTraining -= OnStartedTraining;
+            _directorAssistant.DirectorAssistantMLManager.OnCompletedTraining -= OnCompletedTraining;
+
+            _directorAssistant.CancelService();
         }
 
         private void OnNewTipsGenerated(List<DirectorTipModel> directorTips) {

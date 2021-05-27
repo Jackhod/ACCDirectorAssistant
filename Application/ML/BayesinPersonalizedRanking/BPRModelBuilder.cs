@@ -186,7 +186,7 @@ namespace Application.ML.BayesinPersonalizedRanking {
                 _trainingCycles += 1;
                 writer.Write(_trainingCycles);   
                 
-                writer.Close();
+                writer.Dispose();
 
             }catch(Exception ex) {
                 System.Diagnostics.Trace.WriteLine(ex.StackTrace);
@@ -205,7 +205,7 @@ namespace Application.ML.BayesinPersonalizedRanking {
                     for (int i = 0; i < NumFeatures; i++) UFactors[i] = reader.ReadSingle();
                     _trainingCycles = reader.ReadInt32();
 
-                    reader.Close();
+                    reader.Dispose();
                     System.Diagnostics.Debug.WriteLine("updating model: " + UFactors.ToString());
                     _modelLoaded = true;
                     return true;

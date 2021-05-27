@@ -9,7 +9,7 @@ using System.Text;
 using System.Text.Json;
 
 namespace ACCAssistedDirector.Core.Services {
-    public class CameraService : UpdateReceiver, ICameraService {
+    public class CameraService : GameUpdatesReceiver, ICameraService {
 
         public Dictionary<string, List<CameraModel>> CameraSets { get; private set; }
         public Dictionary<string, List<TVCameraModel>> TVCameraSets { get; private set; }
@@ -25,60 +25,75 @@ namespace ACCAssistedDirector.Core.Services {
         public event ActiveCamUpdatedDelegate OnActiveCamUpdated;
         #endregion
 
-        private ICarEntryListService carEntryListService;
-        private ITrackDataService trackDataService;
+        private IClientService _clientService;
+        private ICarEntryListService _carEntryListService;
+        private ITrackDataService _trackDataService;
         private CameraModel _previousCam;
         float lastFocusedCarSplinePosition = -1f;
         int lastFocusedCarSpeed = -1;
         int lastFocusedCarId = -1;
 
         public CameraService(IClientService clientService, ICarEntryListService carEntryListService, ITrackDataService trackDataService) :base(clientService) {
-            this.carEntryListService = carEntryListService;
-            this.trackDataService = trackDataService;
+            
+            _carEntryListService = carEntryListService;
+            _trackDataService = trackDataService;
+            _clientService = clientService;
 
-            clientService.MessageHandler.OnSetCamera += SetActiveCamera;
+            _clientService.MessageHandler.OnSetCamera += SetActiveCamera;
+        }
+
+        public void CancelService() {
+
+            _clientService.MessageHandler.OnSetCamera -= SetActiveCamera;
+            UnsubscribeFromGameUpdates();
+
+            CameraSets.Clear();
+            CameraSets = null;
+            TVCameraSets.Clear();
+            TVCameraSets = null;
+            CamTypeLastActive.Clear();                   
+            CamTypeLastActive = null;
         }
 
         protected override void OnTrackDataUpdate(string sender, TrackData trackData) {
-            if (CameraSets == null) {
-                CameraSets = new Dictionary<string, List<CameraModel>>();
-                TVCameraSets = new Dictionary<string, List<TVCameraModel>>();
-                CamTypeLastActive = new Dictionary<CamTypeEnum, DateTime>();
-                _previousCam = null;
 
-                foreach (var camSet in trackData.CameraSets) {
+            CameraSets = new Dictionary<string, List<CameraModel>>();
+            TVCameraSets = new Dictionary<string, List<TVCameraModel>>();
+            CamTypeLastActive = new Dictionary<CamTypeEnum, DateTime>();
+            _previousCam = null;
 
-                    if (camSet.Key.EndsWith("vr", StringComparison.InvariantCultureIgnoreCase))
-                        continue;
+            foreach (var camSet in trackData.CameraSets) {
 
-                    CameraSets.Add(camSet.Key, new List<CameraModel>());
+                if (camSet.Key.EndsWith("vr", StringComparison.InvariantCultureIgnoreCase))
+                    continue;
 
-                    if (camSet.Key.StartsWith("set")) {
-                        TVCameraModel lastTvCam = null;
-                        foreach (var tvCamName in camSet.Value) {
-                            var cam = new TVCameraModel(camSet.Key, tvCamName);
-                            if (lastTvCam != null)
-                                cam.PrevCam = lastTvCam;
-                            lastTvCam = cam;
-                            CameraSets[camSet.Key].Add(cam);
-                            AddTVCamera(camSet.Key, cam);
-                        }
-                    } else {
-                        foreach (var otherCamName in camSet.Value) {
-                            var cam = new CameraModel(camSet.Key, otherCamName);
-                            CameraSets[camSet.Key].Add(cam);
-                        }
+                CameraSets.Add(camSet.Key, new List<CameraModel>());
+
+                if (camSet.Key.StartsWith("set")) {
+                    TVCameraModel lastTvCam = null;
+                    foreach (var tvCamName in camSet.Value) {
+                        var cam = new TVCameraModel(camSet.Key, tvCamName);
+                        if (lastTvCam != null)
+                            cam.PrevCam = lastTvCam;
+                        lastTvCam = cam;
+                        CameraSets[camSet.Key].Add(cam);
+                        AddTVCamera(camSet.Key, cam);
+                    }
+                } else {
+                    foreach (var otherCamName in camSet.Value) {
+                        var cam = new CameraModel(camSet.Key, otherCamName);
+                        CameraSets[camSet.Key].Add(cam);
                     }
                 }
-
-                foreach (var camType in CameraSets.SelectMany(x => x.Value).Select(x => x.CamType).Distinct()) {
-                    CamTypeLastActive.Add(camType, DateTime.Now.AddMinutes(-10));
-                }
-
-                TryLoadTVCameraDefs(trackDataService.TrackDataModel.TrackName);
-                UpdateTVCamLearningProgress();
-                OnCamsReceived?.Invoke();
             }
+
+            foreach (var camType in CameraSets.SelectMany(x => x.Value).Select(x => x.CamType).Distinct()) {
+                CamTypeLastActive.Add(camType, DateTime.Now.AddMinutes(-10));
+            }
+
+            TryLoadTVCameraDefs(_trackDataService.TrackDataModel.TrackName);
+            UpdateTVCamLearningProgress();
+            OnCamsReceived?.Invoke();
         }
 
         private void SetActiveCamera(string cameraSet, string camera, bool isAutoDirector = false) {
@@ -100,8 +115,7 @@ namespace ACCAssistedDirector.Core.Services {
                         OnActiveCamUpdated?.Invoke(cam, isAutoDirector);
                     }
                 }
-                if (CurrentCam != null)
-                    CamTypeLastActive[CurrentCam.CamType] = DateTime.Now;
+                if (CurrentCam != null && CamTypeLastActive != null) CamTypeLastActive[CurrentCam.CamType] = DateTime.Now;
             } catch (Exception ex) {
                 Debug.WriteLine(ex.StackTrace);
             }
@@ -109,13 +123,14 @@ namespace ACCAssistedDirector.Core.Services {
 
         protected override void OnRealtimeUpdate(string sender, RealtimeUpdate realtimeUpdate) {
 
-            if (CurrentCam == null || CurrentCam.CameraName != realtimeUpdate.ActiveCamera || CurrentCam.CameraSetName != realtimeUpdate.ActiveCameraSet)
+            if (CurrentCam == null || CurrentCam.CameraName != realtimeUpdate.ActiveCamera || CurrentCam.CameraSetName != realtimeUpdate.ActiveCameraSet) {
                 SetActiveCamera(realtimeUpdate.ActiveCameraSet, realtimeUpdate.ActiveCamera);
+            }
         }
 
         protected override void OnRealtimeCarUpdate(string sender, RealtimeCarUpdate realtimeCarUpdate) {
 
-            var focusedCar = carEntryListService.GetFocusedCar();
+            var focusedCar = _carEntryListService.GetFocusedCar();
 
             if (focusedCar == null) return;
 
@@ -145,7 +160,7 @@ namespace ACCAssistedDirector.Core.Services {
                         var oldProgress = TVCamLearningProgress;
                         UpdateTVCamLearningProgress();
                         if (oldProgress != TVCamLearningProgress && TVCamLearningProgress == 1f)
-                            SaveTVCameraDefs(TVCameraSets.SelectMany(x => x.Value), trackDataService.TrackDataModel.TrackName);
+                            SaveTVCameraDefs(TVCameraSets.SelectMany(x => x.Value), _trackDataService.TrackDataModel.TrackName);
                     }
                 }
             }
@@ -173,7 +188,7 @@ namespace ACCAssistedDirector.Core.Services {
             var json = System.IO.File.ReadAllText($"CamDefs/{track}.json");
             try {
                 var camDefs = JsonSerializer.Deserialize<IEnumerable<TVCameraModel>>(json);
-                foreach (var c in camDefs) Debug.WriteLine(c.CameraSetName + " " + c.CameraName);
+                //foreach (var c in camDefs) Debug.WriteLine(c.CameraSetName + " " + c.CameraName);
                 foreach (var item in tVCameraSets) {
                     var camDef = camDefs.FirstOrDefault(x => string.Equals(x.CameraSetName, item.CameraSetName) && string.Equals(x.CameraName, item.CameraName));
                     if (camDef != null)

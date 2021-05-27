@@ -1,11 +1,12 @@
-﻿using Domain.Models;
+﻿using Application.Services.Interfaces;
+using Domain.Models;
 
 namespace ACCAssistedDirector.Core.Services {
 
     public delegate void EventAddedDelegate(BroadcastingEventModel broadcastingEvent);
     public delegate void EventRemovedDelegate(BroadcastingEventModel broadcastingEvent);
 
-    public interface IReplayService {
+    public interface IReplayService : Service{
 
         public void RemoveEvent(BroadcastingEventModel evnt);
 

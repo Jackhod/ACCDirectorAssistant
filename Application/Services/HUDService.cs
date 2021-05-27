@@ -5,21 +5,32 @@ using System;
 using System.Collections.Generic;
 
 namespace ACCAssistedDirector.Core.Services {
-    public class HUDService : UpdateReceiver, IHUDService {
+    public class HUDService : GameUpdatesReceiver, IHUDService {
 
         public Dictionary<string, Boolean> HUDPages { get; set; } //hud page name, active/not active
 
         public event HUDPagesReceivedDelegate OnHUDPageReceived;
         public event ActiveHUDPageUpdateDelegate OnActiveHUDPageUpdated;
 
+        private IClientService _clientService;
         private string currentHUDPage = null;
 
         public HUDService(IClientService clientService) : base(clientService) {
             HUDPages = new Dictionary<string, bool>();
-            clientService.MessageHandler.OnSetHUDPage += OnSetHUDPage;
+            _clientService = clientService;
+            _clientService.MessageHandler.OnSetHUDPage += OnSetHUDPage;
+        }
+
+        public void CancelService() {
+            HUDPages.Clear();
+            HUDPages = null;
+            _clientService.MessageHandler.OnSetHUDPage -= OnSetHUDPage;
+            UnsubscribeFromGameUpdates();
         }
 
         protected override void OnTrackDataUpdate(string sender, TrackData trackUpdate) {
+
+            System.Diagnostics.Debug.WriteLine("ontrackdataupdate hudservice");
 
             //add pages that are not already in the dictionary
             foreach (var hudPage in trackUpdate.HUDPages) {

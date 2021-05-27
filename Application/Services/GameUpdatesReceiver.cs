@@ -5,10 +5,10 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace ACCAssistedDirector.Core.Services {
-    public class UpdateReceiver {
+    public class GameUpdatesReceiver {
 
         protected IClientService _clientService;
-        public UpdateReceiver(IClientService clientService) {
+        public GameUpdatesReceiver(IClientService clientService) {
             _clientService = clientService;
             _clientService.MessageHandler.OnTrackDataUpdate += OnTrackDataUpdate;
             _clientService.MessageHandler.OnEntrylistReceived += OnEntrylistReceived;
@@ -16,6 +16,15 @@ namespace ACCAssistedDirector.Core.Services {
             _clientService.MessageHandler.OnRealtimeUpdate += OnRealtimeUpdate;
             _clientService.MessageHandler.OnRealtimeCarUpdate += OnRealtimeCarUpdate;
             _clientService.MessageHandler.OnBroadcastingEvent += OnBroadastingEvent;
+        }
+
+        public void UnsubscribeFromGameUpdates() {
+            _clientService.MessageHandler.OnTrackDataUpdate -= OnTrackDataUpdate;
+            _clientService.MessageHandler.OnEntrylistReceived -= OnEntrylistReceived;
+            _clientService.MessageHandler.OnEntrylistUpdate -= OnEntryListUpdate;
+            _clientService.MessageHandler.OnRealtimeUpdate -= OnRealtimeUpdate;
+            _clientService.MessageHandler.OnRealtimeCarUpdate -= OnRealtimeCarUpdate;
+            _clientService.MessageHandler.OnBroadcastingEvent -= OnBroadastingEvent;
         }
 
         protected virtual void OnTrackDataUpdate(string sender, TrackData trackData) { }

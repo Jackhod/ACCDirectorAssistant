@@ -31,8 +31,16 @@ namespace ACCAssistedDirector.Core.ViewModels {
             _clientService = clientService;
             _HUDService = HUDService;
 
-            HUDService.OnHUDPageReceived += OnHUDPageReceived;
-            HUDService.OnActiveHUDPageUpdated += OnActiveHUDPageUpdated;
+            _HUDService.OnHUDPageReceived += OnHUDPageReceived;
+            _HUDService.OnActiveHUDPageUpdated += OnActiveHUDPageUpdated;
+        }
+
+        public void PrepareToClose() {
+            _hudPages.Clear();
+            _hudPages = null;
+            _HUDService.OnHUDPageReceived -= OnHUDPageReceived;
+            _HUDService.OnActiveHUDPageUpdated -= OnActiveHUDPageUpdated;
+            _HUDService.CancelService();
         }
 
         private void OnHUDPageReceived(string HUDPage) {

@@ -21,18 +21,29 @@ namespace ACCAssistedDirector.Core.ViewModels {
             }
         }
 
-        private IReplayService replayService;
-        private IClientService clientService;
+        private IReplayService _replayService;
+        private IClientService _clientService;
 
         public ReplayPanelViewModel(IReplayService replayService, IClientService clientService) {
-            this.clientService = clientService;
-            this.replayService = replayService;
-            replayService.OnEventAdded += OnEventAdded;
-            replayService.OnEventRemoved += OnEventRemoved;
+            _clientService = clientService;
+            _replayService = replayService;
+
+            _replayService.OnEventAdded += OnEventAdded;
+            _replayService.OnEventRemoved += OnEventRemoved;
         }     
 
+        public void PrepareToClose() {
+            _raceEvents.Clear();
+            _raceEvents = null;
+
+            _replayService.OnEventAdded -= OnEventAdded;
+            _replayService.OnEventRemoved -= OnEventRemoved;
+
+            _replayService.CancelService();
+        }
+
         private void OnEventAdded(BroadcastingEventModel evnt) {
-            RaceEvents.Insert(0, new RaceEventViewModel(evnt, OnHighlightReplay, replayService));
+            RaceEvents.Insert(0, new RaceEventViewModel(evnt, OnHighlightReplay, _replayService));
             RaisePropertyChanged(() => RaceEvents);
         }
 
@@ -42,7 +53,7 @@ namespace ACCAssistedDirector.Core.ViewModels {
         }
 
         private void OnHighlightReplay(BroadcastingEventModel raceEvent, float replayStartTime, float durationSeconds) {
-            clientService.MessageHandler.RequestInstantReplay(replayStartTime, durationSeconds * 1000.0f, raceEvent.CarId);
+            _clientService.MessageHandler.RequestInstantReplay(replayStartTime, durationSeconds * 1000.0f, raceEvent.CarId);
         }
     }
 }

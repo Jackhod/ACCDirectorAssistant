@@ -91,7 +91,7 @@ namespace Application.ML.NaiveBayesClassifier {
                     }
                 }
 
-                reader.Close();
+                reader.Dispose();
                 return true;
             }catch(Exception ex) {
                 System.Diagnostics.Trace.WriteLine(ex.StackTrace);

@@ -17,9 +17,15 @@ using AppAnalytics;
 using ACCAssistedDirector.Core.MessageHandling;
 using Domain.ACCUpdatesStructs;
 using Domain.Models;
+using MvvmCross.IoC;
+using Infrastructure.FileIO;
+using MvvmCross.Navigation;
 
 namespace ACCAssistedDirector.Core.ViewModels {
-    public class MainViewModel : MvxViewModel {
+    public class MainViewModel : MvxViewModel<object, bool> {
+
+        private static int instanceCount = 0;
+        public int instanceid;
 
         IClientService Client { get; set; }
         public CarEntryListViewModel CarEntryListVM { get; set; }
@@ -38,8 +44,34 @@ namespace ACCAssistedDirector.Core.ViewModels {
             set { SetProperty(ref _isOptionsOpen, value); }
         }
 
-        public override void Prepare()
+        private readonly IMvxNavigationService _navigationService;
+
+        public MainViewModel(IMvxNavigationService navigationService, IClientService client) {
+
+            instanceid = instanceCount;
+            instanceCount += 1;
+
+            Debug.WriteLine("MAINVIEW constructor " + instanceid);
+
+            Client = client;
+            Mvx.IoCProvider.LazyConstructAndRegisterSingleton<ICarEntryListService, CarEntryListService>();
+            Mvx.IoCProvider.LazyConstructAndRegisterSingleton<ITrackDataService, TrackDataService>();
+            Mvx.IoCProvider.LazyConstructAndRegisterSingleton<ICameraService, CameraService>();
+            Mvx.IoCProvider.LazyConstructAndRegisterSingleton<IHUDService, HUDService>();
+            Mvx.IoCProvider.LazyConstructAndRegisterSingleton<IReplayService, ReplayService>();
+            Mvx.IoCProvider.LazyConstructAndRegisterSingleton<IDirectorAssistant, DirectorAssistant>();
+            Mvx.IoCProvider.RegisterType(typeof(ICSVHelperService<>), typeof(CSVHandler<>));
+
+            _navigationService = navigationService;
+
+            Client.MessageHandler.OnRealtimeUpdate += CheckSessionStatus;
+        }
+
+        public override void Prepare(object o)
         {
+
+            Debug.WriteLine("MAINVIEW prepare " + instanceid);
+
             Client = Mvx.IoCProvider.Resolve<IClientService>();
             var trackDataService = Mvx.IoCProvider.Resolve<ITrackDataService>();
 
@@ -68,6 +100,9 @@ namespace ACCAssistedDirector.Core.ViewModels {
         }
 
         public override async Task Initialize() {
+
+            Debug.WriteLine("MAINVIEW initialize " + instanceid);
+
             await base.Initialize();           
         }
 
@@ -77,6 +112,46 @@ namespace ACCAssistedDirector.Core.ViewModels {
 
         private void CloseOptionsMenu() {
             IsOptionsOpen = false;
+        }
+
+        private double _sessionTime = 0f;
+        private void CheckSessionStatus(string sender, RealtimeUpdate realtimeUpdate) {
+            var sessionTime = realtimeUpdate.SessionTime.TotalSeconds;
+
+            if (sessionTime > _sessionTime) {
+                _sessionTime = sessionTime;
+            } else if (sessionTime < _sessionTime) { //new session or race restarted
+                Debug.WriteLine("Race restarded or new session " + instanceid);
+                _sessionTime = 0;
+
+                Client.Shutdown();
+                Client.Dispose();
+
+                CarEntryListVM.PrepareToClose();
+                _navigationService.Close(CarEntryListVM);
+
+                HUDPanelVM.PrepareToClose();
+                _navigationService.Close(HUDPanelVM);
+
+                CameraPanelVM.PrepareToClose();
+                _navigationService.Close(CameraPanelVM);
+
+                DirectorAssistantVM.PrepareToClose();
+                _navigationService.Close(DirectorAssistantVM);
+
+                TrackMapVM.PrepareToClose();
+                _navigationService.Close(TrackMapVM);
+
+                ReplayPanelVM.PrepareToClose();
+                _navigationService.Close(ReplayPanelVM);
+
+                Mvx.IoCProvider.Resolve<ITrackDataService>().CancelService();
+
+                _navigationService.Close(OptionsVM);
+
+                Client.MessageHandler.OnRealtimeUpdate -= CheckSessionStatus;
+                _navigationService.Close<bool>(this, false);
+            }
         }
     }
 }

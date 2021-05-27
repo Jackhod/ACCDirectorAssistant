@@ -7,7 +7,10 @@ using System.Linq;
 namespace ACCAssistedDirector.Core.ViewModels {
     public class CarEntryListViewModel : MvxViewModel {
 
-        private MvxObservableCollection<CarEntryViewModel> _cars = new MvxObservableCollection<CarEntryViewModel>();
+        private static int instanceCount = 0;
+        public int instanceid;
+
+        private MvxObservableCollection<CarEntryViewModel> _cars;
         public MvxObservableCollection<CarEntryViewModel> Cars
         {
             get { return _cars; }
@@ -43,15 +46,37 @@ namespace ACCAssistedDirector.Core.ViewModels {
         public event CarEntryUpdateDelegate OnCarEntryUpdate;
 
         public CarEntryListViewModel(IClientService clientService, ICarEntryListService carEntryListService) {
+
+            instanceid = instanceCount;
+            instanceCount += 1;
+
+            //System.Diagnostics.Debug.WriteLine("CARENTRYLISTVM: constructor " + instanceid);
+
+            _cars = new MvxObservableCollection<CarEntryViewModel>();
+
             InstantFocus = true;
             _clientService = clientService;
             _carEntryListService = carEntryListService;
 
-            carEntryListService.OnEntryListUpdated += EntryListUpdated;
-            carEntryListService.OnLastCarUpdated += SortEntries;
+            _carEntryListService.OnEntryListUpdated += EntryListUpdated;
+            _carEntryListService.OnLastCarUpdated += SortEntries;           
+        }
+
+        public void PrepareToClose() {
+
+            //System.Diagnostics.Debug.WriteLine("CARENTRYLISTVM: prepare to close " + instanceid);
+
+            _cars.Clear();
+            _cars = null;
+            _carEntryListService.OnEntryListUpdated -= EntryListUpdated;
+            _carEntryListService.OnLastCarUpdated -= SortEntries;
+            _carEntryListService.CancelService();
         }
 
         private void EntryListUpdated(CarUpdateModel car) {
+
+            //System.Diagnostics.Debug.WriteLine("CARENTRYLISTVM: entry list updated " + instanceid);
+
             CarEntryViewModel carEntry = _cars.SingleOrDefault(c => c.CarIndex == car.CarInfo.CarIndex);
             if (carEntry == null) {
                 carEntry = new CarEntryViewModel(car, RequestDriverChange);

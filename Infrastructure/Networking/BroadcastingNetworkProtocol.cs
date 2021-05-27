@@ -12,7 +12,7 @@ namespace Infrastructure.Networking {
     public class BroadcastingNetworkProtocol : IMessageHandler {
 
         public const int BROADCASTING_PROTOCOL_VERSION = 4;
-        private string ConnectionIdentifier { get; }       
+        private string ConnectionIdentifier { get; set; }       
         public int ConnectionId { get; private set; }
         public float TrackMeters { get; private set; }
      
@@ -31,9 +31,7 @@ namespace Infrastructure.Networking {
         public event SetHudPageDelegate OnSetHUDPage;
         public event StartReplayDelegate OnStartedReplay;
 
-
-        internal delegate void SendMessageDelegate(byte[] payload);
-        private SendMessageDelegate Send { get; }
+        private SendMessageDelegate Send { get; set; }
 
         #region EntryList handling
         // To avoid huge UDP pakets for longer entry lists, we will first receive the indexes of cars and drivers,
@@ -47,7 +45,7 @@ namespace Infrastructure.Networking {
 
         #endregion
 
-        internal BroadcastingNetworkProtocol(string connectionIdentifier, SendMessageDelegate sendMessageDelegate) {
+        public void Init(string connectionIdentifier, SendMessageDelegate sendMessageDelegate) {
             if (string.IsNullOrEmpty(connectionIdentifier))
                 throw new ArgumentNullException(nameof(connectionIdentifier), $"No connection identifier set; we use this to distinguish different connections. Using the remote IP:Port is a good idea");
 

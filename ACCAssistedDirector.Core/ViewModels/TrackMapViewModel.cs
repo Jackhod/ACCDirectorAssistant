@@ -36,16 +36,27 @@ namespace ACCAssistedDirector.Core.ViewModels {
             set { SetProperty(ref _length, value); }
         }
 
-        private IDirectorAssistant directorAssistant;
-        private ICarEntryListService carEntryListService;
+        private IDirectorAssistant _directorAssistant;
+        private ICarEntryListService _carEntryListService;
 
         public TrackMapViewModel(IDirectorAssistant directorAssistant, ICarEntryListService carEntryListService) {
-            this.directorAssistant = directorAssistant;
-            this.carEntryListService = carEntryListService;
-            directorAssistant.OnNewTipsGenerated += OnNewTipsGenerated;
-            carEntryListService.OnEntryListUpdated += AddCarIcon;
-            carEntryListService.OnCarEntryUpdated += UpdateCarIcon;
-            carEntryListService.OnLastCarUpdated += UpdateRelativeCarIconsPos;
+            _directorAssistant = directorAssistant;
+            _carEntryListService = carEntryListService;
+
+            _directorAssistant.OnNewTipsGenerated += OnNewTipsGenerated;
+            _carEntryListService.OnEntryListUpdated += AddCarIcon;
+            _carEntryListService.OnCarEntryUpdated += UpdateCarIcon;
+            _carEntryListService.OnLastCarUpdated += UpdateRelativeCarIconsPos;
+        }
+
+        public void PrepareToClose() {
+            _points.Clear();
+            _points = null;
+
+            _directorAssistant.OnNewTipsGenerated -= OnNewTipsGenerated;
+            _carEntryListService.OnEntryListUpdated -= AddCarIcon;
+            _carEntryListService.OnCarEntryUpdated -= UpdateCarIcon;
+            _carEntryListService.OnLastCarUpdated -= UpdateRelativeCarIconsPos;
         }
 
         private void OnNewTipsGenerated(List<DirectorTipModel> directorTips) {
@@ -73,7 +84,7 @@ namespace ACCAssistedDirector.Core.ViewModels {
             float minPos = float.MaxValue;
 
             // we find the max position
-            foreach(var car in carEntryListService.CarEntryList) {
+            foreach(var car in _carEntryListService.CarEntryList) {
                 var carIcon = _points.FirstOrDefault(p => p.CarIndex == car.CarInfo.CarIndex);
                 carIcon.Y = car.SplinePosition + car.Laps;
                 if (carIcon.Y > maxPos) maxPos = Convert.ToSingle(carIcon.Y);
@@ -98,7 +109,7 @@ namespace ACCAssistedDirector.Core.ViewModels {
         private void UpdateCarIcon(int carIndex) {
             var carIcon = _points.FirstOrDefault(p => p.CarIndex == carIndex);
             if (carIcon != null) {
-                var car = carEntryListService.GetCarById(carIndex);
+                var car = _carEntryListService.GetCarById(carIndex);
                 carIcon.SplinePos = car.SplinePosition;
                 carIcon.ZIndex = -car.TrackPosition;
             }
