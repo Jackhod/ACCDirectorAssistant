@@ -17,7 +17,7 @@
     </UserControl.Resources>
 
     <Grid>
-        <UniformGrid Visibility="{Binding ViewLoginCommands, Converter={StaticResource BoolToVisConverter}}" Columns="1">
+        <UniformGrid Columns="1">
 
             <Grid Grid.Column="0">
                 <Grid.ColumnDefinitions>
@@ -133,18 +133,11 @@
         </UniformGrid>
 
         <StackPanel Orientation="Vertical" 
-                    VerticalAlignment="Center"
-                    Visibility="{Binding ViewErrorMessage, Converter={StaticResource BoolToVisConverter}}">
+                    Visibility="{Binding ViewErrorMessage, Converter={StaticResource BoolToVisConverter}}" Margin="0,292,0,47">
 
-          <TextBlock Style="{StaticResource TitleText}"  
-                     Text="Authorization Failed"
-                     Foreground="#F1F1F1"
-                     HorizontalAlignment="Center"/>
-
-          <TextBlock Style="{StaticResource SubTitleText}"  
-                     Margin="0 20 0 0"
+          <TextBlock Style="{StaticResource SubTitleText}"
                      TextWrapping="Wrap"
-                     Text="If the demo is over thank you for trying my application! Otherwise check your internet connection"
+                     Text="Connection failed, try checking the ip address"
                      Foreground="#F1F1F1"
                      HorizontalAlignment="Center"/>
 

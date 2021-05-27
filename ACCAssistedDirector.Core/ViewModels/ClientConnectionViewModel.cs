@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using ACCAssistedDirector.Core.MessageHandling;
 using ACCAssistedDirector.Core.Services;
@@ -80,12 +81,7 @@ namespace ACCAssistedDirector.Core.ViewModels {
             set { SetProperty(ref _viewErrorMessage, value); }
         }
 
-        private bool _viewLoginCommands;
-        public bool ViewLoginCommands
-        {
-            get { return _viewLoginCommands; }
-            set { SetProperty(ref _viewLoginCommands, value); }
-        }
+        private bool _connectionSuccess = false;
 
         private readonly IMvxNavigationService _navigationService;
 
@@ -100,42 +96,27 @@ namespace ACCAssistedDirector.Core.ViewModels {
             UpdateIntervalMS = 1000;
 
             _navigationService = navigationService;
-            _navigationService.AfterNavigate += Boh;
             Client = client;
             Client.MessageHandler.OnConnectionStateChanged += OpenMainView;
+            _viewErrorMessage = false;
         }
 
         public override void Prepare() {
             base.Prepare();
-            _viewErrorMessage = false;
-            _viewLoginCommands = false;
-
-            string authString = null;
-            try {
-                WebClient client = new WebClient();
-                Stream stream = client.OpenRead("https://www.cusmilanoesport.it/data/acc_beta.txt");
-                StreamReader reader = new StreamReader(stream);
-                authString = reader.ReadToEnd();
-            }catch(Exception ex) {
-                _viewErrorMessage = true;
-            }
-
-            if (authString != null) {
-                _viewLoginCommands = true;
-                _viewErrorMessage = false;
-            } else {
-                _viewErrorMessage = true;
-                _viewLoginCommands = false;
-            }
         }        
 
-        public void Connect(){                   
+        public void Connect(){
+            ViewErrorMessage = false;
             Debug.WriteLine("connecting!");            
             Client.Init(_ipAddr, _port, _displayName, _connectionPW, _commandPW, _updateIntervalMS);
-            Client.Connect();            
+            Client.Connect();
+
+            ConnectionTimeout();
         }
 
         private async void OpenMainView(int connectionId, bool connectionSuccess, bool isReadonly, string error) {
+
+            _connectionSuccess = connectionSuccess;
 
             Debug.WriteLine("connected");
             if (connectionSuccess) {
@@ -146,13 +127,11 @@ namespace ACCAssistedDirector.Core.ViewModels {
             } else {
                 Debug.WriteLine("connection failed");
             }
- 
-
-            //await _navigationService.Navigate<MainViewModel, ACCUdpRemoteClient>(Client);
         }
 
-        private void Boh(object sender, IMvxNavigateEventArgs e) {
-            Debug.WriteLine("back to connection");
+        private async Task ConnectionTimeout() {
+            await Task.Delay(2000);
+            ViewErrorMessage = true;
         }
     }
 }
