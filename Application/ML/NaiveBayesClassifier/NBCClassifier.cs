@@ -10,40 +10,8 @@ using System.Text;
 namespace Application.ML.NaiveBayesClassifier {
     public class NBCClassifier : IMLPredictor {
 
-        private Dictionary<CamTypeEnum, NDArray> classifiers;
+        private Dictionary<CamTypeEnum, NDArray> classifiers;       
 
-        //public float Predict(float[] featureVector) {
-        //    var predictedCam = Classify(featureVector);
-        //    return (float)predictedCam;
-        //}
-
-        //public CamTypeEnum Classify(float[] featureVector) {
-
-        //    int numFeatures = featureVector.Length;
-        //    float maxPosterior = 0;
-        //    CamTypeEnum prediction = CamTypeEnum.Tv2;
-        //    foreach(var camType in classifiers.Keys) {
-
-        //        float posterior = 1f;
-
-        //        for(int i = 0; i < numFeatures; i++) {
-        //            float featureAvg = classifiers[camType][2 * i];
-        //            float featureVar = classifiers[camType][2 * i + 1];
-
-        //            var pfeatureCamType = 1/MathF.Sqrt(2*MathF.PI*featureVar) * MathF.Exp(-MathF.Pow((featureVector[i] - featureAvg),2) / (2 * featureVar));
-        //            posterior *= pfeatureCamType;
-        //        }
-
-        //        if(posterior > maxPosterior) {
-        //            maxPosterior = posterior;
-        //            prediction = camType;
-        //        }
-        //    }
-
-        //    return prediction;
-        //}
-
-        //TEST
         public float Predict(float[] featureVector) {
             var camType = (CamTypeEnum)featureVector[featureVector.Length - 1];
             float[] features = new float[featureVector.Length - 1];
@@ -52,7 +20,6 @@ namespace Application.ML.NaiveBayesClassifier {
             return (float)predictedCam;
         }
 
-        //TEST
         public float Classify(CamTypeEnum camType, float[] featureVector) {
 
             if (!classifiers.ContainsKey(camType)) return -1;

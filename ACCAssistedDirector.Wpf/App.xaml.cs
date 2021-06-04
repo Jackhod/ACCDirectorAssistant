@@ -11,6 +11,8 @@ namespace ACCAssistedDirector.Wpf {
         protected override void RegisterSetup()
         {
             this.RegisterSetupType<MvxWpfSetup<ACCAssistedDirector.Core.App>>();
+
+            //Uncomment to start azure tracking
             //EventsTracker.StartTracker();
         }
     }

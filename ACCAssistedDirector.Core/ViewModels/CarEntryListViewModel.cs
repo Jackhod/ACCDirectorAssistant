@@ -50,8 +50,6 @@ namespace ACCAssistedDirector.Core.ViewModels {
             instanceid = instanceCount;
             instanceCount += 1;
 
-            //System.Diagnostics.Debug.WriteLine("CARENTRYLISTVM: constructor " + instanceid);
-
             _cars = new MvxObservableCollection<CarEntryViewModel>();
 
             InstantFocus = true;
@@ -64,8 +62,6 @@ namespace ACCAssistedDirector.Core.ViewModels {
 
         public void PrepareToClose() {
 
-            //System.Diagnostics.Debug.WriteLine("CARENTRYLISTVM: prepare to close " + instanceid);
-
             _cars.Clear();
             _cars = null;
             _carEntryListService.OnEntryListUpdated -= EntryListUpdated;
@@ -74,8 +70,6 @@ namespace ACCAssistedDirector.Core.ViewModels {
         }
 
         private void EntryListUpdated(CarUpdateModel car) {
-
-            //System.Diagnostics.Debug.WriteLine("CARENTRYLISTVM: entry list updated " + instanceid);
 
             CarEntryViewModel carEntry = _cars.SingleOrDefault(c => c.CarIndex == car.CarInfo.CarIndex);
             if (carEntry == null) {

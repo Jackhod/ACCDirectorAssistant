@@ -94,6 +94,7 @@ namespace ACCAssistedDirector.Core.ViewModels {
             DirectorAssistantVM = new DirectorAssistantViewModel(directorAssistant, Client, CarEntryListVM);
             TrackMapVM = new TrackMapViewModel(directorAssistant, carEntryListService);
 
+            //Uncomment to enable azure tracking (also in app.xaml.cs and MainWindow.xaml.cs)
             //EventsTracker.TrackEvents(Client, directorAssistant, carEntryListService, cameraService);
 
             IsOptionsOpen = false;

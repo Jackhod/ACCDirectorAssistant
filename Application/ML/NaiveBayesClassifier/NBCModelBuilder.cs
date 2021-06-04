@@ -36,8 +36,6 @@ namespace Application.ML.NaiveBayesClassifier {
         }
        
         public void LoadTrainingData(string path) {
-            //var reader = new StreamReader(path);
-            //var csvReader = new CsvReader(reader, CultureInfo.CurrentCulture);
             trainingData = _camFeaturesDataReader.ReadFromFile(path).ToList();
         }
 

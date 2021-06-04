@@ -13,7 +13,8 @@ namespace ACCAssistedDirector.Wpf {
         }
 
         private void ClosingWindow(object sender, System.ComponentModel.CancelEventArgs e) {
-            EventsTracker.EndTracker();
+            //Uncomment to stop azure tracking
+            //EventsTracker.EndTracker();
         }
     }
 }

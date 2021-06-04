@@ -21,14 +21,6 @@ namespace ACCAssistedDirector.Core {
 
             Mvx.IoCProvider.LazyConstructAndRegisterSingleton<IClientService, ACCUdpRemoteClient>();
 
-            //Mvx.IoCProvider.LazyConstructAndRegisterSingleton<ICarEntryListService, CarEntryListService>();
-            //Mvx.IoCProvider.LazyConstructAndRegisterSingleton<ITrackDataService, TrackDataService>();
-            //Mvx.IoCProvider.LazyConstructAndRegisterSingleton<ICameraService, CameraService>();
-            //Mvx.IoCProvider.LazyConstructAndRegisterSingleton<IHUDService, HUDService>();
-            //Mvx.IoCProvider.LazyConstructAndRegisterSingleton<IReplayService, ReplayService>();
-            //Mvx.IoCProvider.LazyConstructAndRegisterSingleton<IDirectorAssistant, DirectorAssistant>();
-            //Mvx.IoCProvider.RegisterType(typeof(ICSVHelperService<>), typeof(CSVHandler<>));
-
             RegisterAppStart<ClientConnectionViewModel>();
         }
     }

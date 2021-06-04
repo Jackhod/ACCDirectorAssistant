@@ -22,22 +22,6 @@ namespace ACCAssistedDirector.Core.Assistant {
         }
 
         public List<TipModel<CarUpdateModel>> GetPreferredCar(List<CarUpdateModel> trackPositionCarList, /*float trackMeters,*/ float currentFocusSeconds, int howMany) {
-            //maxRankCar = null;
-            //MaxPressure = -1;
-            //AvgPressure = -1;
-
-            //foreach (var car in trackPositionCarList) {
-            //    var pressure = EvaluateCarFeatureValues(car, trackPositionCarList, trackMeters, currentFocusSeconds, WeightDict);
-            //    if (MaxPressure < pressure) {
-            //        MaxPressure = pressure;
-            //        maxRankCar = car;
-            //    }
-            //    AvgPressure += car.Pressure;
-            //}
-
-            //if (trackPositionCarList.Count > 0) AvgPressure /= trackPositionCarList.Count;
-
-            //return new TipModel<CarUpdateModel>() { Tip = maxRankCar, Score = MaxPressure };
 
             List<TipModel<CarUpdateModel>> carScores = new List<TipModel<CarUpdateModel>>();
             foreach(var car in trackPositionCarList) {

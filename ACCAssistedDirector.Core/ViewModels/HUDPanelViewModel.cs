@@ -21,13 +21,11 @@ namespace ACCAssistedDirector.Core.ViewModels {
                 RaisePropertyChanged(() => HUDPages);
             }
         }
-        //private Action<string> SetHudPageAction { get; set; }
 
         private IClientService _clientService;
         private IHUDService _HUDService;
 
         public HUDPanelViewModel(IClientService clientService, IHUDService HUDService) {
-            //SetHudPageAction = setHudPageAction;
             _clientService = clientService;
             _HUDService = HUDService;
 

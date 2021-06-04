@@ -29,17 +29,6 @@ namespace Application.ML.BayesinPersonalizedRanking {
 
         public BPRModelBuilder(ICSVHelperService<CarFeatures> carFeaturesDataReader) {
             _carFeaturesDataReader = carFeaturesDataReader;
-        //    //TrainData = trainData;
-        //    //NumFeatures = TrainData[0].Length - 2; // last 2 columns are ID and choose
-        //    //columnID = NumFeatures;
-        //    //columnChoice = NumFeatures + 1;
-
-            //    System.Diagnostics.Debug.WriteLine("start training... ");
-            //    //if (!ReadModel()) {
-            //    //    UFactors = new NDArray(typeof(float), NumFeatures);
-            //    //    Random rnd = new Random();
-            //    //    for (int i = 0; i < NumFeatures; i++) UFactors[i] = rnd.NextDouble();
-            //    //}
         }
 
         public void Train() {
@@ -57,20 +46,6 @@ namespace Application.ML.BayesinPersonalizedRanking {
         public void LoadTrainingData(string path) {
             TrainData = new List<float[]>();
 
-            //var reader = new StreamReader("Dataset/CarsOnlySelection.csv");
-            //var csv = new CsvReader(reader, CultureInfo.CurrentCulture);
-
-            //System.Diagnostics.Debug.WriteLine("Reading car training data...");
-            //csv.Read();
-            //int numColumn = csv.Parser.Count;
-            //csv.ReadHeader();
-
-            //System.Diagnostics.Debug.WriteLine(numColumn);
-            //while (csv.Read()) {
-            //    var record = new float[numColumn];
-            //    for (int i = 0; i < numColumn; i++) record[i] = csv.GetField<float>(i);
-            //    TrainData.Add(record);
-            //}
             var records = _carFeaturesDataReader.ReadFromFile(path).ToList();
 
             foreach(var r in records) {
