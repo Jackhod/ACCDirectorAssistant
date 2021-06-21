@@ -85,7 +85,7 @@ namespace ACCAssistedDirector.Core.ViewModels {
             HUDPanelVM = new HUDPanelViewModel(Client, HUDService);
 
             var replayService = Mvx.IoCProvider.Resolve<IReplayService>();
-            ReplayPanelVM = new ReplayPanelViewModel(replayService, Client);
+            ReplayPanelVM = new ReplayPanelViewModel(replayService, Client, carEntryListService);
 
             OptionsVM = new OptionsViewModel(CloseOptionsMenu);
             OptionsCommand = new MvxCommand(OpenOptionsMenu);

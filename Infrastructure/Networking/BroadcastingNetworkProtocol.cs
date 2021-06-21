@@ -355,8 +355,13 @@ namespace Infrastructure.Networking {
             OnSetHUDPage?.Invoke(requestedHudPage);
         }
 
-        public void RequestInstantReplay(float replayStartTime, float duration, int carId) {
-            RequestInstantReplayInternal(replayStartTime, duration * 1000.0f, carId);
+        public void RequestInstantReplay(float replayStartTimeMS, float durationSeconds, int carId) {
+            RequestInstantReplayInternal(replayStartTimeMS, durationSeconds * 1000.0f, carId);
+            OnStartedReplay?.Invoke();
+        }
+
+        public void RequestInstantReplay(float replayStartTimeMS, float durationSeconds) {
+            RequestInstantReplayInternal(replayStartTimeMS, durationSeconds * 1000.0f);
             OnStartedReplay?.Invoke();
         }
 

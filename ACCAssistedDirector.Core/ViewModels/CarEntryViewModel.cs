@@ -112,6 +112,7 @@ namespace ACCAssistedDirector.Core.ViewModels {
 
         public IMvxCommand SelectionCommand { get; set; }
 
+        private ICarEntryListService _carEntryListService;
         private readonly Action<int> _onClickCallback;
         private int _currentDriverIndex = -1;
 
@@ -122,9 +123,13 @@ namespace ACCAssistedDirector.Core.ViewModels {
 
             RaceNumber = car.CarInfo.RaceNumber;
 
-            var carEntryListService = Mvx.IoCProvider.Resolve<ICarEntryListService>();
-            carEntryListService.OnCarEntryUpdated += UpdateCarEntry;
-            carEntryListService.OnFocusedCarUpdated += FucusedCarUpdate;
+            _carEntryListService = Mvx.IoCProvider.Resolve<ICarEntryListService>();
+            _carEntryListService.OnCarEntryUpdated += UpdateCarEntry;
+            _carEntryListService.OnFocusedCarUpdated += FucusedCarUpdate;
+        }
+
+        private void UpdateCarEntry(int carIndex) {
+            if (_carUpdate.CarInfo.CarIndex == carIndex) UpdateCarEntry();
         }
 
         public void UpdateCarEntry() {
@@ -178,14 +183,10 @@ namespace ACCAssistedDirector.Core.ViewModels {
 
         private void UpdateDriver() {
             if (_carUpdate.CarInfo.CurrentDriverIndex != _currentDriverIndex) {
-                Driver = _carUpdate.CarInfo.Drivers[_carUpdate.CarInfo.CurrentDriverIndex].DisplayName;
                 _currentDriverIndex = _carUpdate.CarInfo.CurrentDriverIndex;
+                Driver = _carUpdate.CarInfo.Drivers[_currentDriverIndex].DisplayName;               
             }
-        }
-
-        private void UpdateCarEntry(int carIndex) {
-            if (_carUpdate.CarInfo.CarIndex == carIndex) UpdateCarEntry();
-        }
+        }        
 
         private void FucusedCarUpdate(bool autoDirectorChangedFocus) {
             if (_carUpdate.HasFocus) {
@@ -200,6 +201,11 @@ namespace ACCAssistedDirector.Core.ViewModels {
         public void OnSelected() {
             Selected = true;
             _onClickCallback?.Invoke(CarIndex);          
+        }
+
+        public void PrepareRemove() {
+            _carEntryListService.OnCarEntryUpdated -= UpdateCarEntry;
+            _carEntryListService.OnFocusedCarUpdated -= FucusedCarUpdate;
         }
     }
 }

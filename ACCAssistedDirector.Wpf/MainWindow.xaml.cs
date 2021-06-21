@@ -9,7 +9,7 @@ namespace ACCAssistedDirector.Wpf {
         public MainWindow()
         {
             InitializeComponent();
-            Title = "ACCDirectorAssistant_BETA";
+            Title = "ACCDirectorAssistant";
         }
 
         private void ClosingWindow(object sender, System.ComponentModel.CancelEventArgs e) {

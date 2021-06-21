@@ -15,11 +15,11 @@ namespace ACCAssistedDirector.Core.ViewModels {
         public IMvxCommand ReplayCommand { get; set; }
         public IMvxCommand RemoveCommand { get; set; }
 
-        private readonly Action<BroadcastingEventModel, float, float> _replayDelegate;
+        private readonly Action<BroadcastingEventModel, int, int> _replayDelegate;
 
         private readonly IReplayService replayService;
 
-        public RaceEventViewModel(BroadcastingEventModel raceEvent, Action<BroadcastingEventModel, float, float> replayDelegate, IReplayService replayService) {
+        public RaceEventViewModel(BroadcastingEventModel raceEvent, Action<BroadcastingEventModel, int, int> replayDelegate, IReplayService replayService) {
             RaceEvent = raceEvent;
             _replayDelegate = replayDelegate;
             this.replayService = replayService;
@@ -29,24 +29,25 @@ namespace ACCAssistedDirector.Core.ViewModels {
 
         private void Replay() {
 
-            float startReplayTime = RaceEvent.TimeMs - (5 * 1000);
-            float duration = 10f;
+            int eventTime = (int) (RaceEvent.TimeMs * 0.001f);
+            int startTimeSeconds = eventTime - 5;
+            int duration = 10;
 
             if (EventType == "GreenFlag") {
-                startReplayTime = RaceEvent.TimeMs - (7 * 1000);
-                duration = 25f;
+                startTimeSeconds = eventTime -7;
+                duration = 25;
             }
 
             if (EventType == "PenaltyCommMsg") {
-                startReplayTime = RaceEvent.TimeMs - (10 * 1000);
-                duration = 6f;
+                startTimeSeconds = eventTime -10;
+                duration = 6;
             }
 
             if (EventType == "Accident") {
-                startReplayTime = RaceEvent.TimeMs - (10 * 1000);
-                duration = 10f;
+                startTimeSeconds = eventTime - 10;
+                duration = 10;
             }
-            _replayDelegate(RaceEvent, startReplayTime, duration);
+            _replayDelegate(RaceEvent, startTimeSeconds, duration);
         }
 
         private void RemoveEvent() { replayService.RemoveEvent(RaceEvent); }

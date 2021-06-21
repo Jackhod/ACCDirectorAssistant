@@ -10,6 +10,7 @@ namespace ACCAssistedDirector.Core.Services {
     public delegate void CarEntryUpdatedDelegate(int carIndex);
     public delegate void LastCarUpdatedDelegate();
     public delegate void FocusedCarUpdatedDelegate(bool isAutoDirector);
+    public delegate void RemovedCarFromEntrylistDelegate(int carIndex);
 
     public interface ICarEntryListService : Service {
         public List<CarUpdateModel> CarEntryList { get; set; }
@@ -21,5 +22,6 @@ namespace ACCAssistedDirector.Core.Services {
         public event CarEntryUpdatedDelegate OnCarEntryUpdated;
         public event LastCarUpdatedDelegate OnLastCarUpdated;
         public event FocusedCarUpdatedDelegate OnFocusedCarUpdated;
+        public event RemovedCarFromEntrylistDelegate OnRemovedCarFromEntrylist;
     }
 }

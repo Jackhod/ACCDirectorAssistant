@@ -61,6 +61,8 @@ namespace Domain.Models {
             Yaw = carUpdate.Yaw;
             Laps = carUpdate.Laps;
 
+            CarInfo.UpdateDriverIndex(carUpdate.DriverIndex); 
+
             if (BestSessionLap == null && carUpdate.BestSessionLap != null)
                 BestSessionLap = new LapModel();
             if (carUpdate.BestSessionLap != null)

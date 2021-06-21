@@ -57,15 +57,17 @@ namespace ACCAssistedDirector.Core.ViewModels {
             _carEntryListService = carEntryListService;
 
             _carEntryListService.OnEntryListUpdated += EntryListUpdated;
-            _carEntryListService.OnLastCarUpdated += SortEntries;           
+            _carEntryListService.OnLastCarUpdated += SortEntries;
+            _carEntryListService.OnRemovedCarFromEntrylist += RemoveCar;
         }
 
         public void PrepareToClose() {
-
+            foreach (var car in _cars) car.PrepareRemove();
             _cars.Clear();
             _cars = null;
             _carEntryListService.OnEntryListUpdated -= EntryListUpdated;
             _carEntryListService.OnLastCarUpdated -= SortEntries;
+            _carEntryListService.OnRemovedCarFromEntrylist -= RemoveCar;
             _carEntryListService.CancelService();
         }
 
@@ -77,6 +79,14 @@ namespace ACCAssistedDirector.Core.ViewModels {
                 _cars.Add(carEntry);
             }
             carEntry.UpdateCarEntry();
+        }
+
+        private void RemoveCar(int carToRemoveIndex) {
+            var carToRemove = _cars.SingleOrDefault(c => c.CarIndex == carToRemoveIndex);
+            if(carToRemove != null) {
+                carToRemove.PrepareRemove();
+                _cars.Remove(carToRemove);
+            }
         }
 
         private void RequestDriverChange(int carIndex) {
@@ -92,17 +102,14 @@ namespace ACCAssistedDirector.Core.ViewModels {
         }
 
         private void SortByPosition() {
-
             for (int i = 0; i < _cars.Count; i++) {
                 int index = _cars.IndexOf(_cars.FirstOrDefault(c => c.Position == i + 1));
                 if (index != i && index >= 0) _cars.Move(index, i);
             }
-
             foreach (var c in _cars) c.UpdateDisplayedPosition(_radioButtonSelection);
         }
 
         private void SortByTrackPosition() {
-
             for (int i = 0; i < _cars.Count; i++) {
                 int index = _cars.IndexOf(_cars.FirstOrDefault(c => c.TrackPosition == i + 1));
                 if (index != i && index >= 0) _cars.Move(index, i);

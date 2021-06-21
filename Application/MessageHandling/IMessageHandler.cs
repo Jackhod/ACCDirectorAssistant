@@ -26,7 +26,8 @@ namespace ACCAssistedDirector.Core.MessageHandling {
         public void SetCamera(string cameraSet, string camera, bool isAutoDirector = false);
         public void SetFocusAndCamera(int carIndex, string cameraSet, string camera, bool isAutoDirector = false);
         public void SetHudPage(string requestedHudPage);
-        public void RequestInstantReplay(float replayStartTime, float duration, int carId);
+        public void RequestInstantReplay(float replayStartTimeMS, float durationSeconds, int carId);
+        public void RequestInstantReplay(float replayStartTimeMS, float durationSeconds);
         public void RequestEntryList();
 
         public event ConnectionStateChangedDelegate OnConnectionStateChanged;

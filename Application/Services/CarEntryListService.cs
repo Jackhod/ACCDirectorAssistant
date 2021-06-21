@@ -18,19 +18,20 @@ namespace ACCAssistedDirector.Core.Services {
         private int updateCount = 0;
         private int focusedCarIndex;
         private DateTime _lastEntrylistRequest = DateTime.Now;
+        private Dictionary<int, bool> updateChecks;
 
         #region events
         public event EntryListUpdatedDelegate OnEntryListUpdated;
         public event CarEntryUpdatedDelegate OnCarEntryUpdated;
         public event LastCarUpdatedDelegate OnLastCarUpdated;
         public event FocusedCarUpdatedDelegate OnFocusedCarUpdated;
+        public event RemovedCarFromEntrylistDelegate OnRemovedCarFromEntrylist;
         #endregion
 
         public CarEntryListService(IClientService clientService, ITrackDataService trackDataService) : base(clientService) {
 
-            Debug.WriteLine("CAR_ENTRYLIST_SERVICE: constructor");
-
             CarEntryList = new List<CarUpdateModel>();
+            updateChecks = new Dictionary<int, bool>();
             _trackData = trackDataService;
             _clientService = clientService;
 
@@ -41,18 +42,26 @@ namespace ACCAssistedDirector.Core.Services {
             UnsubscribeFromGameUpdates();
             _clientService.MessageHandler.OnSetFocus -= SetFocusedCar;
             CarEntryList.Clear();
-            CarEntryList = null;           
+            CarEntryList = null;
+            updateChecks.Clear();
+            updateChecks = null;
         }
        
         protected override void OnEntrylistReceived(string sender, IEnumerable<ushort> carIds) {
 
             System.Diagnostics.Debug.WriteLine("entrylist received carentry");
 
+            foreach (var car in CarEntryList)  OnRemovedCarFromEntrylist?.Invoke(car.CarInfo.CarIndex);
+
             CarEntryList.Clear();
             updateCount = 0;
             foreach(var id in carIds) {
-                var carInfo = new CarModel(id);
-                CarEntryList.Add(new CarUpdateModel(carInfo));
+                if (GetCarById(id) == null) {
+                    System.Diagnostics.Debug.WriteLine("added " + id);
+                    var carInfo = new CarModel(id);
+                    CarEntryList.Add(new CarUpdateModel(carInfo));
+                    if (!updateChecks.ContainsKey(id)) updateChecks.Add(id, true);
+                }
             }           
         }
 
@@ -63,6 +72,7 @@ namespace ACCAssistedDirector.Core.Services {
                 CarModel carInfo = new CarModel(carUpdate.CarIndex);
                 carEntry = new CarUpdateModel(carInfo);
                 CarEntryList.Add(carEntry);
+                if (!updateChecks.ContainsKey(carUpdate.CarIndex)) updateChecks.Add(carUpdate.CarIndex, true);
             }
             carEntry.CarInfo.Update(carUpdate);
             
@@ -84,9 +94,10 @@ namespace ACCAssistedDirector.Core.Services {
                 }
                 return;
             }
-                         
-            carEntry.Update(carUpdate, _trackData.TrackDataModel);           
+
+            carEntry.Update(carUpdate, _trackData.TrackDataModel);
             OnCarEntryUpdated?.Invoke(carEntry.CarInfo.CarIndex);
+            updateChecks[carUpdate.CarIndex] = true;
 
             updateCount++;
             if(updateCount == CarEntryList.Count) {
@@ -94,6 +105,7 @@ namespace ACCAssistedDirector.Core.Services {
                 UpdateGaps();
                 CountCarsAround();
                 foreach (var car in CarEntryList) OnCarEntryUpdated?.Invoke(car.CarInfo.CarIndex);
+                RemoveOldCars();
                 OnLastCarUpdated?.Invoke(); //all cars have been updated
                 updateCount = 0;
             }
@@ -169,9 +181,7 @@ namespace ACCAssistedDirector.Core.Services {
                         var distance2 = CalcMetersDistance(sortedCars.First(), sortedCars.Last(), _trackData.TrackDataModel.TrackMeters);
                         sortedCars.First().GapFrontMeters = distance2;
                         sortedCars.Last().GapRearMeters = distance2;
-
-                        //Debug.WriteLine("");
-                        //foreach (var c in sortedCars) Debug.WriteLine(c.GapFrontMeters + " " + c.GapFrontSeconds + " " + c.GapRearMeters + " " + c.GapRearSeconds);
+              
                     } else {
                         foreach (var item in sortedCars) {
                             item.GapFrontMeters = _trackData.TrackDataModel.TrackMeters;
@@ -209,6 +219,16 @@ namespace ACCAssistedDirector.Core.Services {
             var splineDistance = cAheadSplinePos - cBehingSplinePos;
 
             return splineDistance * trackMeters;
+        }
+
+        private void RemoveOldCars() {
+            foreach(var carCheck in updateChecks.ToList()) {
+                if (!carCheck.Value) { // the car has not been updated so it can be removed
+                    CarEntryList.Remove(GetCarById(carCheck.Key));
+                    OnRemovedCarFromEntrylist?.Invoke(carCheck.Key);
+                }
+                updateChecks[carCheck.Key] = false;
+            }
         }
     }
 }

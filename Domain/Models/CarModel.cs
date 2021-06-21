@@ -12,6 +12,7 @@ namespace Domain.Models {
         public int CurrentDriverIndex { get; private set; }
         public List<DriverModel> Drivers { get; } = new List<DriverModel>();
         public NationalityEnum Nationality { get; private set; }
+        public string DriverName => Drivers[CurrentDriverIndex].DisplayName;
 
         public CarModel(ushort carIndex) {
             CarIndex = carIndex;
@@ -24,6 +25,10 @@ namespace Domain.Models {
             CupCategory = carInfo.CupCategory;
             CurrentDriverIndex = carInfo.CurrentDriverIndex;
             Nationality = carInfo.Nationality;
+        }
+
+        public void UpdateDriverIndex(int driverIndex) {
+            CurrentDriverIndex = driverIndex;
         }
 
         public void AddDriver(DriverInfo driverInfo) {

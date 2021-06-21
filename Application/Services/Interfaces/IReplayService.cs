@@ -8,6 +8,8 @@ namespace ACCAssistedDirector.Core.Services {
 
     public interface IReplayService : Service{
 
+        public void PlayQuickReplay(int durationSeconds, int secondsBack, int targetCarId);
+        public void PlayHighlightReplay(int durationSeconds, int startSeconds, int targetCarId);
         public void RemoveEvent(BroadcastingEventModel evnt);
 
         public event EventAddedDelegate OnEventAdded;
